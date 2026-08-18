@@ -322,24 +322,106 @@ export default function LoginPage() {
               </button>
             </div>
 
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">
-                ชื่อ - นามสกุล <span className="text-red-500">*</span>:
-              </label>
-              <input
-                type="text"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder={selectedRole === 'STUDENT' ? 'เช่น นายสมชาย ใจดี' : 'เช่น ครูวิภาดา สอนดี'}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
+            {/* Student ID Lookup Field (Top Priority for Students) */}
+            {selectedRole === 'STUDENT' ? (
+              <div className="space-y-1.5 p-3.5 bg-orange-50/70 border border-orange-200/80 rounded-2xl">
+                <label className="font-extrabold text-slate-800 text-xs flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-brand-700">
+                    <span>🆔 เลขประจำตัวนักเรียน (5 หลัก)</span>
+                    <span className="text-red-500">*</span>
+                  </span>
+                  <span className="text-[10px] text-brand-600 font-bold bg-white px-2 py-0.5 rounded-full border border-orange-200">
+                    ดึงชื่อและห้องอัตโนมัติ ⚡
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  maxLength={6}
+                  value={studentId}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9]/g, '');
+                    setStudentId(val);
+                    if (val.length >= 4) {
+                      import('@/lib/studentsLookup').then(({ findStudentById }) => {
+                        const res = findStudentById(val);
+                        if (res.found && res.student) {
+                          setFullName(res.student.fullName);
+                          setGradeRoom(res.student.gradeRoom);
+                          showToast(
+                            'success',
+                            'พบข้อมูลนักเรียน! 🎓',
+                            `${res.student.fullName} (${res.student.gradeRoom}) เลขที่ ${res.student.studentNumber}`
+                          );
+                        }
+                      });
+                    }
+                  }}
+                  placeholder="เช่น 34890 หรือ 31774"
+                  className="w-full p-3 bg-white border border-orange-300 rounded-xl font-mono font-black text-base text-brand-700 focus:ring-2 focus:ring-brand-500 shadow-sm"
+                />
+                
+                {fullName && gradeRoom && (
+                  <div className="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 font-bold text-[11px] animate-in fade-in slide-in-from-top-1">
+                    <span className="text-sm">✅</span>
+                    <div className="flex-1 truncate">
+                      <span className="font-extrabold">{fullName}</span> ({gradeRoom})
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
-                  ชื่อเล่น <span className="text-red-500">*</span>:
+                  รหัสประจำตัวครู / บุคลากร (ถ้ามี):
+                </label>
+                <input
+                  type="text"
+                  maxLength={10}
+                  value={studentId}
+                  onChange={(e) => setStudentId(e.target.value)}
+                  placeholder="เช่น T-102 หรือเว้นว่างได้"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:bg-white focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+            )}
+
+            {/* Name & Grade Room Details */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  ชื่อ - นามสกุลจริง <span className="text-red-500">*</span>:
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="เช่น นายสมชาย ใจดี"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  {selectedRole === 'STUDENT' ? 'ระดับชั้น / ห้องเรียน *:' : 'กลุ่มสาระ / ฝ่ายงาน *:'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={gradeRoom}
+                  onChange={(e) => setGradeRoom(e.target.value)}
+                  placeholder={selectedRole === 'STUDENT' ? 'เช่น ม.5/2, ม.1/1' : 'เช่น กลุ่มสาระวิทยาศาสตร์'}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+            </div>
+
+            {/* Nickname & Phone */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  ชื่อเล่น (สำหรับเรียกรับอาหาร) <span className="text-red-500">*</span>:
                 </label>
                 <input
                   type="text"
@@ -347,51 +429,23 @@ export default function LoginPage() {
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
                   placeholder={selectedRole === 'STUDENT' ? 'เช่น ก้อง' : 'เช่น ครูวิ'}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-brand-500"
                 />
               </div>
 
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
-                  {selectedRole === 'STUDENT' ? 'รหัสนักเรียน (5 หลัก):' : 'รหัสประจำตัวครู (ถ้ามี):'}
+                  เบอร์โทรศัพท์ <span className="text-red-500">*</span>:
                 </label>
                 <input
-                  type="text"
-                  maxLength={10}
-                  value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
-                  placeholder={selectedRole === 'STUDENT' ? 'เช่น 45892' : 'เช่น T-102 หรือเว้นว่าง'}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                  type="tel"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="089-123-4567"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:bg-white focus:ring-2 focus:ring-brand-500"
                 />
               </div>
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">
-                {selectedRole === 'STUDENT' ? 'ระดับชั้น / ห้องเรียน *:' : 'กลุ่มสาระการเรียนรู้ / ฝ่ายงาน *:'}
-              </label>
-              <input
-                type="text"
-                required
-                value={gradeRoom}
-                onChange={(e) => setGradeRoom(e.target.value)}
-                placeholder={selectedRole === 'STUDENT' ? 'เช่น ม.5/2, ม.1/3, ม.6/1' : 'เช่น กลุ่มสาระวิทยาศาสตร์, ฝ่ายวิชาการ, ธุรการ'}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">
-                เบอร์โทรศัพท์ติดต่อ <span className="text-red-500">*</span>:
-              </label>
-              <input
-                type="tel"
-                required
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="089-123-4567"
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:bg-white focus:ring-2 focus:ring-emerald-500"
-              />
             </div>
 
             <div>
@@ -402,15 +456,15 @@ export default function LoginPage() {
                 type="text"
                 value={promptPay}
                 onChange={(e) => setPromptPay(e.target.value)}
-                placeholder="เบอร์โทรหรือเลขบัตรประชาชน"
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                placeholder="เบอร์โทรศัพท์ หรือเว้นว่างเพื่อใช้เบอร์ด้านบน"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:bg-white focus:ring-2 focus:ring-brand-500"
               />
             </div>
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 mt-2"
+              disabled={loading || !fullName || !studentId || !nickname || !phone}
+              className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 disabled:opacity-50 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 mt-2"
             >
               <span>{loading ? 'กำลังบันทึก...' : 'เสร็จสิ้น เริ่มสั่งอาหารเลย 🍱'}</span>
               <ArrowRight className="w-4 h-4" />

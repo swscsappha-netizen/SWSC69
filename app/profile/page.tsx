@@ -179,14 +179,32 @@ export default function ProfilePage() {
             <div>
               <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1">
                 <Hash className="w-3 h-3 text-slate-500" />
-                รหัสนักเรียน (Student ID)
+                รหัสนักเรียน (Student ID 5 หลัก)
               </label>
               <input
                 type="text"
                 value={studentId}
-                onChange={(e) => { setStudentId(e.target.value); markChanged(); }}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^0-9]/g, '');
+                  setStudentId(val);
+                  markChanged();
+                  if (val.length >= 4) {
+                    import('@/lib/studentsLookup').then(({ findStudentById }) => {
+                      const res = findStudentById(val);
+                      if (res.found && res.student) {
+                        setName(res.student.fullName);
+                        setGradeRoom(res.student.gradeRoom);
+                        showToast(
+                          'success',
+                          'พบข้อมูลนักเรียน! 🎓',
+                          `${res.student.fullName} (${res.student.gradeRoom})`
+                        );
+                      }
+                    });
+                  }
+                }}
                 className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-brand-400 focus:border-brand-400 transition font-mono font-bold tracking-widest"
-                placeholder="เช่น 67010234"
+                placeholder="เช่น 34890 หรือ 31774"
               />
             </div>
           </div>
