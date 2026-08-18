@@ -3,6 +3,7 @@ import './globals.css';
 import { AppProvider } from '@/context/AppContext';
 import Navbar from '@/components/Navbar';
 import BottomNav from '@/components/BottomNav';
+import AuthGuard from '@/components/AuthGuard';
 import ToastContainer from '@/components/ToastContainer';
 import FloatingCartBar from '@/components/FloatingCartBar';
 
@@ -20,20 +21,22 @@ export default function RootLayout({
     <html lang="th">
       <body className="min-h-screen bg-slate-50 text-slate-900 flex flex-col antialiased selection:bg-brand-500 selection:text-white">
         <AppProvider>
-          {/* Top Navbar */}
-          <Navbar />
+          <AuthGuard>
+            {/* Top Navbar */}
+            <Navbar />
 
-          {/* Main Viewport Content */}
-          <main className="flex-1 pb-24 md:pb-16">{children}</main>
+            {/* Main Viewport Content */}
+            <main className="flex-1 pb-24 md:pb-16">{children}</main>
 
-          {/* Sticky Floating Cart Indicator */}
-          <FloatingCartBar />
+            {/* Sticky Floating Cart Indicator */}
+            <FloatingCartBar />
 
-          {/* Mobile Bottom Navigation */}
-          <BottomNav />
+            {/* Mobile Bottom Navigation */}
+            <BottomNav />
 
-          {/* Toasts */}
-          <ToastContainer />
+            {/* Toasts */}
+            <ToastContainer />
+          </AuthGuard>
         </AppProvider>
       </body>
     </html>

@@ -42,6 +42,7 @@ interface AppContextType {
   currentUser: UserProfile;
   switchRole: (role: UserRole) => void;
   updateUserProfile: (profile: Partial<UserProfile>) => void;
+  logout: () => void;
   
   // Cart
   cart: CartItem[];
@@ -176,6 +177,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       const savedReviews = localStorage.getItem('sappha_reviews');
       if (savedReviews) setReviews(JSON.parse(savedReviews));
+
+      const savedAuth = localStorage.getItem('sappha_auth_user');
+      const savedLoggedIn = localStorage.getItem('sappha_is_logged_in') === 'true';
+      if (savedAuth && savedLoggedIn) {
+        setCurrentUser(JSON.parse(savedAuth));
+      }
     } catch (e) {
       console.error('Failed to load local storage:', e);
     }
@@ -442,8 +449,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateUserProfile = (profile: Partial<UserProfile>) => {
-    setCurrentUser((prev) => ({ ...prev, ...profile }));
+    setCurrentUser((prev) => {
+      const updated = { ...prev, ...profile, isLoggedIn: true };
+      try {
+        localStorage.setItem('sappha_auth_user', JSON.stringify(updated));
+        localStorage.setItem('sappha_is_logged_in', 'true');
+      } catch (e) {}
+      return updated;
+    });
     showToast('success', 'บันทึกข้อมูลสำเร็จ', 'อัปเดตโปรไฟล์เรียบร้อยแล้ว');
+  };
+
+  const logout = () => {
+    try {
+      localStorage.removeItem('sappha_auth_user');
+      localStorage.removeItem('sappha_is_logged_in');
+    } catch (e) {}
+    setCurrentUser({
+      ...initialUserProfile,
+      isLoggedIn: false,
+    });
+    showToast('info', 'ออกจากระบบแล้ว', 'กรุณาเข้าสู่ระบบใหม่เพื่อใช้งาน');
+    window.location.href = '/login';
   };
 
   // Cart operations
@@ -1034,6 +1061,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         currentUser,
         switchRole,
         updateUserProfile,
+        logout,
         cart,
         addToCart,
         removeFromCart,

@@ -121,14 +121,6 @@ export default function LoginPage() {
     }, 600);
   };
 
-  const handleQuickSwitch = (role: 'STUDENT' | 'MERCHANT' | 'ADMIN') => {
-    switchRole(role);
-    showToast('success', 'เข้าสู่ระบบสำเร็จ', `เข้าใช้งานในบทบาท ${role}`);
-    if (role === 'ADMIN') router.push('/admin');
-    else if (role === 'MERCHANT') router.push('/merchant');
-    else router.push('/');
-  };
-
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-8">
       <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200/80 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">

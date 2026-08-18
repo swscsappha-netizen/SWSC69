@@ -13,6 +13,7 @@ export interface UserProfile {
   avatarUrl?: string;
   shopId?: string; // If merchant
   isActive?: boolean;
+  isLoggedIn?: boolean;
   joinedAt?: string;
 }
 

@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
-import { User, Save, Camera, BadgeCheck, Phone, BookOpen, CreditCard, Hash, Store, AlertCircle } from 'lucide-react';
+import { User, Save, Camera, BadgeCheck, Phone, BookOpen, CreditCard, Hash, Store, AlertCircle, LogOut } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProfilePage() {
-  const { currentUser, updateUserProfile, showToast, shops, switchRole } = useApp();
+  const { currentUser, updateUserProfile, showToast, shops, switchRole, logout } = useApp();
 
   const [name, setName] = useState(currentUser.name);
   const [nickname, setNickname] = useState(currentUser.nickname);
@@ -343,6 +343,18 @@ export default function ProfilePage() {
             </div>
           );
         })()}
+      </div>
+
+      {/* Logout Action */}
+      <div className="pt-2 text-center">
+        <button
+          type="button"
+          onClick={logout}
+          className="w-full py-3.5 px-4 bg-red-50 hover:bg-red-100 text-red-600 font-extrabold text-xs rounded-2xl border border-red-200 shadow-sm transition flex items-center justify-center gap-2 active:scale-95"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>ออกจากระบบ (Logout)</span>
+        </button>
       </div>
     </div>
   );

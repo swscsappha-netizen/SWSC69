@@ -13,15 +13,16 @@ import {
 
 export const initialUserProfile: UserProfile = {
   id: 'user_student_1',
-  name: 'นายสมชาย ใจดี',
-  nickname: 'ก้อง',
-  studentId: '45892',
-  gradeRoom: 'ม.5/2',
-  phone: '089-123-4567',
-  promptPayNumber: '0891234567',
+  name: 'นักเรียนสรรพวิทยาคม',
+  nickname: 'ผู้ใช้งาน',
+  studentId: '',
+  gradeRoom: '',
+  phone: '',
+  promptPayNumber: '',
   role: 'STUDENT',
-  avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&q=80',
+  avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
   isActive: true,
+  isLoggedIn: false,
   joinedAt: '2026-05-15',
 };
 
