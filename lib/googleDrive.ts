@@ -1,9 +1,22 @@
 import { google } from 'googleapis';
 import { Readable } from 'stream';
 
+function cleanFolderId(id: string): string {
+  if (!id) return '';
+  let cleaned = id.trim();
+  if (cleaned.includes('/folders/')) {
+    cleaned = cleaned.split('/folders/')[1];
+  }
+  if (cleaned.includes('?')) {
+    cleaned = cleaned.split('?')[0];
+  }
+  return cleaned.replace(/\/+$/, '').trim();
+}
+
 const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '';
 const privateKey = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
-const rootFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID || '';
+const rawFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID || '';
+const rootFolderId = cleanFolderId(rawFolderId);
 
 export const isGoogleDriveConfigured = Boolean(
   clientEmail &&
