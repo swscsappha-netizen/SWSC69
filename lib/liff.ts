@@ -61,16 +61,23 @@ export async function initLiff(): Promise<{ success: boolean; profile?: LiffProf
     const isInClient = liff.isInClient();
 
     // ถ้าเพิ่งกลับจาก LINE auth callback: รอให้ LIFF SDK process token ก่อน
-    // ป้องกัน isLoggedIn() คืน false ชั่วคราว → วน redirect loop
     if (isLiffAuthCallback() && !liff.isLoggedIn()) {
-      await wait(500);
+      await wait(300);
     }
 
     if (!liff.isLoggedIn()) {
-      // ยังไม่ได้ login จริงๆ → redirect ไป LINE auth
-      // ส่ง redirectUri ชัดเจนเพื่อป้องกัน URL mismatch
-      const redirectUri = `${window.location.origin}/login`;
-      liff.login({ redirectUri });
+      // ถ้าเปิดในแอป LINE ให้เรียก liff.login() แบบ native (ไม่ต้องใส่ redirectUri เพื่อไม่ให้ค้างบน iOS)
+      // ถ้าเปิดใน Safari/Chrome ภายนอก ให้ใส่ redirectUri
+      try {
+        if (isInClient) {
+          liff.login();
+        } else {
+          const redirectUri = `${window.location.origin}/login`;
+          liff.login({ redirectUri });
+        }
+      } catch (loginErr) {
+        console.warn('liff.login call error:', loginErr);
+      }
       return { success: false, isInClient };
     }
 
@@ -88,7 +95,21 @@ export async function initLiff(): Promise<{ success: boolean; profile?: LiffProf
         },
       };
     } catch (profileErr: any) {
-      console.warn('Failed to get LIFF profile:', profileErr);
+      console.warn('Failed to get LIFF profile, trying decoded ID token:', profileErr);
+      try {
+        const idToken = liff.getDecodedIDToken();
+        if (idToken?.sub) {
+          return {
+            success: true,
+            isInClient,
+            profile: {
+              userId: idToken.sub,
+              displayName: idToken.name || 'ผู้ใช้งาน LINE',
+              pictureUrl: idToken.picture,
+            },
+          };
+        }
+      } catch (tokenErr) {}
     }
 
     return { success: true, isInClient };

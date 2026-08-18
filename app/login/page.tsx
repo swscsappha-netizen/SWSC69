@@ -28,6 +28,9 @@ export default function LoginPage() {
     avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
   });
 
+  // Show manual action buttons if LIFF takes more than 3 seconds
+  const [showManualOptions, setShowManualOptions] = useState(false);
+
   // Selected Role for onboarding
   const [selectedRole, setSelectedRole] = useState<'STUDENT' | 'TEACHER' | 'ADMIN'>('STUDENT');
 
@@ -43,114 +46,121 @@ export default function LoginPage() {
   const runLiffInit = useCallback(() => {
     setLiffError(null);
 
-    // iOS LIFF fix: สร้าง Promise ที่ resolve หลัง 10 วินาทีเสมอ
-    // เพื่อ fallback กรณี iOS WebKit freeze Promise chain ไม่ให้ฟัง setTimeout ปกติ
-    const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000));
+    // Timeout fallback หลัง 8 วินาที
+    const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000));
 
     const liffPromise = import('@/lib/liff').then(({ initLiff }) => initLiff());
 
     Promise.race([liffPromise, timeoutPromise]).then((res) => {
-      // Timeout fired → res จะเป็น null
       if (res === null) {
-        setLiffError('การเชื่อมต่อ LINE ใช้เวลานานเกินไป กรุณาปิดแล้วเปิดลิ้งก์ใหม่อีกครั้ง');
+        setShowManualOptions(true);
         return;
       }
 
-        // ถ้า initLiff คืน error field = เกิด error จริงๆ (ไม่ใช่แค่ redirect)
-        if (!res.success && res.error) {
-          setLiffError(`ไม่สามารถเชื่อมต่อ LINE ได้: ${res.error}`);
-          return;
+      if (!res.success && res.error) {
+        setLiffError(`ไม่สามารถเชื่อมต่อ LINE ได้: ${res.error}`);
+        setShowManualOptions(true);
+        return;
+      }
+
+      if (!res.success) {
+        // liff.login() ถูกเรียกแล้ว ถ้ายังไม่ redirect ภายใน 2 วินาทีให้เปิดปุ่มตัวเลือก
+        setTimeout(() => setShowManualOptions(true), 2000);
+        return;
+      }
+
+      if (res.success && res.profile) {
+        const isLineAdmin = ADMIN_LINE_IDS.includes(res.profile.userId);
+        setLineProfile({
+          userId: res.profile.userId,
+          name: res.profile.displayName,
+          avatarUrl: res.profile.pictureUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
+        });
+        setFullName(res.profile.displayName);
+        setNickname(res.profile.displayName.slice(0, 10));
+
+        if (isLineAdmin) {
+          setSelectedRole('ADMIN');
+          setGradeRoom('ผู้ดูแลระบบโรงเรียน');
+          setStudentId('ADMIN-01');
         }
 
-        if (!res.success) {
-          // liff.login() ถูกเรียกแล้วและกำลัง redirect ไป LINE auth — รอ redirect
-          return;
-        }
+        // Check if this user already registered in Supabase (with 2s timeout safeguard)
+        const checkDbPromise = import('@/lib/supabase').then(async ({ supabase, isSupabaseConfigured }) => {
+          if (isSupabaseConfigured && supabase && res.profile?.userId) {
+            try {
+              const { data: existingUser } = await supabase
+                .from('users')
+                .select('*')
+                .or(`line_user_id.eq.${res.profile.userId},id.eq.${res.profile.userId}`)
+                .maybeSingle();
 
-        if (res.success && res.profile) {
-          const isLineAdmin = ADMIN_LINE_IDS.includes(res.profile.userId);
-          setLineProfile({
-            userId: res.profile.userId,
-            name: res.profile.displayName,
-            avatarUrl: res.profile.pictureUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
-          });
-          setFullName(res.profile.displayName);
-          setNickname(res.profile.displayName.slice(0, 10));
+              if (existingUser && existingUser.nickname) {
+                // User already registered -> Auto-login with saved profile!
+                const effectiveRole = isLineAdmin ? 'ADMIN' : (existingUser.role || 'STUDENT');
+                updateUserProfile({
+                  id: existingUser.id,
+                  name: existingUser.name || res.profile.displayName,
+                  nickname: existingUser.nickname,
+                  studentId: existingUser.student_id || '',
+                  gradeRoom: existingUser.grade_room || '',
+                  phone: existingUser.phone || '',
+                  promptPayNumber: existingUser.promptpay_number || '',
+                  promptPayRefund: existingUser.promptpay_refund || existingUser.promptpay_number || '',
+                  role: effectiveRole,
+                  shopId: existingUser.shop_id,
+                  avatarUrl: res.profile.pictureUrl || existingUser.avatar_url,
+                  lineUserId: res.profile.userId,
+                  isActive: existingUser.is_active !== false,
+                  isLoggedIn: true,
+                });
 
-          if (isLineAdmin) {
-            setSelectedRole('ADMIN');
-            setGradeRoom('ผู้ดูแลระบบโรงเรียน');
-            setStudentId('ADMIN-01');
-          }
+                showToast(
+                  'success',
+                  `ยินดีต้อนรับกลับ ${existingUser.nickname || existingUser.name}! 👋`,
+                  `เข้าสู่ระบบในฐานะ ${effectiveRole}`
+                );
 
-          // Check if this user already registered in Supabase
-          import('@/lib/supabase').then(async ({ supabase, isSupabaseConfigured }) => {
-            if (isSupabaseConfigured && supabase && res.profile?.userId) {
-              try {
-                const { data: existingUser } = await supabase
-                  .from('users')
-                  .select('*')
-                  .or(`line_user_id.eq.${res.profile.userId},id.eq.${res.profile.userId}`)
-                  .maybeSingle();
-
-                if (existingUser && existingUser.nickname) {
-                  // User already registered -> Auto-login with saved profile!
-                  const effectiveRole = isLineAdmin ? 'ADMIN' : (existingUser.role || 'STUDENT');
-                  updateUserProfile({
-                    id: existingUser.id,
-                    name: existingUser.name || res.profile.displayName,
-                    nickname: existingUser.nickname,
-                    studentId: existingUser.student_id || '',
-                    gradeRoom: existingUser.grade_room || '',
-                    phone: existingUser.phone || '',
-                    promptPayNumber: existingUser.promptpay_number || '',
-                    promptPayRefund: existingUser.promptpay_refund || existingUser.promptpay_number || '',
-                    role: effectiveRole,
-                    shopId: existingUser.shop_id,
-                    avatarUrl: res.profile.pictureUrl || existingUser.avatar_url,
-                    lineUserId: res.profile.userId,
-                    isActive: existingUser.is_active !== false,
-                    isLoggedIn: true,
-                  });
-
-                  showToast(
-                    'success',
-                    `ยินดีต้อนรับกลับ ${existingUser.nickname || existingUser.name}! 👋`,
-                    `เข้าสู่ระบบในฐานะ ${effectiveRole}`
-                  );
-
-                  if (effectiveRole === 'ADMIN') {
-                    router.replace('/admin');
-                  } else if (effectiveRole === 'MERCHANT') {
-                    router.replace('/merchant');
-                  } else {
-                    router.replace('/');
-                  }
-                  return;
+                if (effectiveRole === 'ADMIN') {
+                  router.replace('/admin');
+                } else if (effectiveRole === 'MERCHANT') {
+                  router.replace('/merchant');
+                } else {
+                  router.replace('/');
                 }
-              } catch (dbErr) {
-                console.warn('Check existing user err:', dbErr);
+                return true;
               }
+            } catch (dbErr) {
+              console.warn('Check existing user err:', dbErr);
             }
+          }
+          return false;
+        });
 
-            // New User (first time) -> Show Onboarding Form!
+        const dbTimeout = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 2000));
+
+        Promise.race([checkDbPromise, dbTimeout]).then((isExisting) => {
+          if (!isExisting) {
+            // New User -> Show Onboarding Form!
             setLiffReady(true);
-          }).catch(() => {
-            setLiffReady(true);
-          });
-        } else {
-          // Login แล้วแต่ไม่มี profile (edge case) → แสดงฟอร์มโดยไม่มีรูป
-          setLiffReady(true);
-        }
+          }
+        });
+      } else {
+        setLiffReady(true);
+      }
     }).catch((err: any) => {
       setLiffError(err?.message || 'เชื่อมต่อ LINE ไม่สำเร็จ กรุณาลองใหม่');
+      setShowManualOptions(true);
     });
   }, [ADMIN_LINE_IDS, router, showToast, updateUserProfile]);
 
   useEffect(() => {
     runLiffInit();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const timer = setTimeout(() => {
+      setShowManualOptions(true);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [runLiffInit]);
 
   const handleCompleteOnboarding = (e: React.FormEvent) => {
     e.preventDefault();
@@ -227,7 +237,7 @@ export default function LoginPage() {
 
         {/* Loading while LIFF is initializing / redirecting to LINE login */}
         {!liffReady && (
-          <div className="p-10 flex flex-col items-center justify-center gap-4 text-center">
+          <div className="p-8 sm:p-10 flex flex-col items-center justify-center gap-4 text-center">
             {liffError ? (
               /* Error State — แสดงเมื่อ LIFF ล้มเหลว พร้อมปุ่มลองใหม่ */
               <>
@@ -238,14 +248,30 @@ export default function LoginPage() {
                   <p className="font-bold text-slate-800 text-sm">เชื่อมต่อ LINE ไม่สำเร็จ</p>
                   <p className="text-[11px] text-slate-500">{liffError}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={runLiffInit}
-                  className="mt-1 px-6 py-2.5 bg-[#06C755] hover:bg-[#05b34b] text-white font-extrabold text-xs rounded-2xl shadow-md transition-all flex items-center gap-2"
-                >
-                  <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M24 10.304c0-5.369-5.383-9.738-12-9.738-6.616 0-12 4.369-12 9.738 0 4.814 4.269 8.846 10.019 9.587.39.085.922.26 1.057.595.121.302.079.774.039 1.08l-.168 1.014c-.052.308-.242 1.205 1.056.657 1.298-.548 7.009-4.128 9.563-7.067 1.62-1.745 2.434-3.535 2.434-5.866z"/></svg>
-                  ลองเชื่อมต่อ LINE ใหม่
-                </button>
+                <div className="w-full space-y-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={runLiffInit}
+                    className="w-full py-2.5 bg-[#06C755] hover:bg-[#05b34b] text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M24 10.304c0-5.369-5.383-9.738-12-9.738-6.616 0-12 4.369-12 9.738 0 4.814 4.269 8.846 10.019 9.587.39.085.922.26 1.057.595.121.302.079.774.039 1.08l-.168 1.014c-.052.308-.242 1.205 1.056.657 1.298-.548 7.009-4.128 9.563-7.067 1.62-1.745 2.434-3.535 2.434-5.866z"/></svg>
+                    <span>ลองเชื่อมต่อ LINE อีกครั้ง</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLineProfile({
+                        userId: `guest_${Date.now()}`,
+                        name: 'นักเรียน สรรพวิทยาคม',
+                        avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
+                      });
+                      setLiffReady(true);
+                    }}
+                    className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition"
+                  >
+                    <span>⚡ ข้ามไปกรอกเลขประจำตัว 5 หลักทันที</span>
+                  </button>
+                </div>
               </>
             ) : (
               /* Normal Loading State */
@@ -261,6 +287,39 @@ export default function LoginPage() {
                   <p className="font-bold text-slate-800 text-sm">กำลังเชื่อมต่อบัญชี LINE...</p>
                   <p className="text-[11px] text-slate-500 mt-1">ระบบกำลังยืนยันตัวตนผ่าน LINE<br/>กรุณารอสักครู่</p>
                 </div>
+
+                {/* Show fallback action buttons if it takes more than 2.5s */}
+                {showManualOptions && (
+                  <div className="space-y-2 w-full pt-3 border-t border-slate-100 animate-in fade-in slide-in-from-bottom-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        import('@/lib/liff').then(({ loginWithLiff }) => {
+                          loginWithLiff();
+                        });
+                      }}
+                      className="w-full py-2.5 px-4 bg-[#06C755] hover:bg-[#05b34b] text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-4 h-4 fill-white" viewBox="0 0 24 24"><path d="M24 10.304c0-5.369-5.383-9.738-12-9.738-6.616 0-12 4.369-12 9.738 0 4.814 4.269 8.846 10.019 9.587.39.085.922.26 1.057.595.121.302.079.774.039 1.08l-.168 1.014c-.052.308-.242 1.205 1.056.657 1.298-.548 7.009-4.128 9.563-7.067 1.62-1.745 2.434-3.535 2.434-5.866z"/></svg>
+                      <span>กดที่นี่เพื่อเข้าสู่ระบบด้วย LINE</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLineProfile({
+                          userId: `guest_${Date.now()}`,
+                          name: 'นักเรียน สรรพวิทยาคม',
+                          avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
+                        });
+                        setLiffReady(true);
+                      }}
+                      className="w-full py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5"
+                    >
+                      <span>⚡ ดำเนินการต่อด้วยเลขประจำตัว 5 หลัก</span>
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </div>
