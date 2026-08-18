@@ -35,8 +35,9 @@ import {
   Sparkles,
   Edit,
   Power,
+  Hash,
 } from 'lucide-react';
-import { OrderStatus, Shop, UserRole } from '@/types';
+import { OrderStatus, Shop, UserRole, UserProfile } from '@/types';
 
 export default function AdminPortalPage() {
   const {
@@ -61,6 +62,7 @@ export default function AdminPortalPage() {
     approveShop,
     users,
     toggleUserStatus,
+    adminUpdateUser,
     systemSettings,
     updateSystemSettings,
     adminOverrideOrderStatus,
@@ -117,9 +119,51 @@ export default function AdminPortalPage() {
     'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80'
   );
 
-  // Users Filter
+  // Users Filter & Management
   const [userSearch, setUserSearch] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState<'ALL' | UserRole>('ALL');
+  const [isUserEditModalOpen, setIsUserEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [editStudentId, setEditStudentId] = useState('');
+  const [editFullName, setEditFullName] = useState('');
+  const [editNickname, setEditNickname] = useState('');
+  const [editGradeRoom, setEditGradeRoom] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editRole, setEditRole] = useState<UserRole>('STUDENT');
+  const [editPromptPayRefund, setEditPromptPayRefund] = useState('');
+  const [editIsActive, setEditIsActive] = useState(true);
+
+  const openEditUserModal = (user: UserProfile) => {
+    setEditingUser(user);
+    setEditStudentId(user.studentId || '');
+    setEditFullName(user.name || '');
+    setEditNickname(user.nickname || '');
+    setEditGradeRoom(user.gradeRoom || '');
+    setEditPhone(user.phone || '');
+    setEditRole(user.role || 'STUDENT');
+    setEditPromptPayRefund(user.promptPayRefund || user.phone || '');
+    setEditIsActive(user.isActive !== false);
+    setIsUserEditModalOpen(true);
+  };
+
+  const handleSaveUserEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+
+    adminUpdateUser(editingUser.id, {
+      studentId: editStudentId.trim(),
+      name: editFullName.trim(),
+      nickname: editNickname.trim(),
+      gradeRoom: editGradeRoom.trim(),
+      phone: editPhone.trim(),
+      role: editRole,
+      promptPayRefund: editPromptPayRefund.trim(),
+      isActive: editIsActive,
+    });
+
+    setIsUserEditModalOpen(false);
+    setEditingUser(null);
+  };
 
   // Orders Audit Filter
   const [orderSearch, setOrderSearch] = useState('');
@@ -881,18 +925,29 @@ export default function AdminPortalPage() {
                       )}
                     </td>
                     <td className="p-3 text-right">
-                      {user.role !== 'ADMIN' && (
+                      <div className="flex items-center justify-end gap-1.5">
                         <button
-                          onClick={() => toggleUserStatus(user.id)}
-                          className={`px-3 py-1 rounded-xl text-[10px] font-bold transition border ${
-                            user.isActive !== false
-                              ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
-                              : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'
-                          }`}
+                          type="button"
+                          onClick={() => openEditUserModal(user)}
+                          className="px-2.5 py-1 rounded-xl text-[10px] font-bold transition border bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 flex items-center gap-1 shadow-sm"
                         >
-                          {user.isActive !== false ? 'ระงับบัญชี' : 'ปลดระงับ'}
+                          <Edit className="w-3 h-3" />
+                          <span>แก้ไข</span>
                         </button>
-                      )}
+                        {user.role !== 'ADMIN' && (
+                          <button
+                            type="button"
+                            onClick={() => toggleUserStatus(user.id)}
+                            className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition border ${
+                              user.isActive !== false
+                                ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
+                                : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'
+                            }`}
+                          >
+                            {user.isActive !== false ? 'ระงับบัญชี' : 'ปลดระงับ'}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -1889,6 +1944,203 @@ export default function AdminPortalPage() {
                 <button
                   type="button"
                   onClick={() => setIsShopModalOpen(false)}
+                  className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-2xl transition"
+                >
+                  ยกเลิก
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* EDIT USER / STUDENT MODAL (ADMIN ONLY) */}
+      {/* ========================================================================= */}
+      {isUserEditModalOpen && editingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-200/90 shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 sm:p-7 space-y-5 animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-black shadow-sm">
+                  <Edit className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900">
+                    แก้ไขข้อมูลผู้ใช้งาน
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-mono">
+                    ID: {editingUser.id}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsUserEditModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveUserEdit} className="space-y-4 text-xs">
+              {/* Student ID Lookup */}
+              <div className="space-y-1.5 p-3.5 bg-orange-50/70 border border-orange-200 rounded-2xl">
+                <label className="font-extrabold text-slate-800 text-xs flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-brand-700">
+                    <Hash className="w-4 h-4 text-brand-600" />
+                    <span>เลขประจำตัวนักเรียน (5 หลัก)</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (editStudentId.length >= 4) {
+                        import('@/lib/studentsLookup').then(({ findStudentById }) => {
+                          const res = findStudentById(editStudentId);
+                          if (res.found && res.student) {
+                            setEditFullName(res.student.fullName);
+                            setEditGradeRoom(res.student.gradeRoom);
+                            showToast('success', 'ดึงข้อมูลทะเบียนสำเร็จ 🎓', `${res.student.fullName} (${res.student.gradeRoom})`);
+                          } else {
+                            showToast('error', 'ไม่พบข้อมูล', 'ไม่พบรหัสนักเรียนนี้ในฐานข้อมูล 2,906 คน');
+                          }
+                        });
+                      }
+                    }}
+                    className="text-[10px] text-brand-700 bg-white hover:bg-orange-100 px-2 py-0.5 rounded-full border border-orange-200 font-bold transition flex items-center gap-1"
+                  >
+                    <span>ดึงชื่อ/ห้องอัตโนมัติ ⚡</span>
+                  </button>
+                </label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={editStudentId}
+                  onChange={(e) => setEditStudentId(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="เช่น 34890 หรือ 31774"
+                  className="w-full p-2.5 bg-white border border-orange-300 rounded-xl font-mono font-bold text-brand-700 focus:ring-2 focus:ring-brand-500 shadow-sm"
+                />
+              </div>
+
+              {/* Full Name & Grade Room */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    ชื่อ-นามสกุลจริง <span className="text-red-500">*</span>:
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editFullName}
+                    onChange={(e) => setEditFullName(e.target.value)}
+                    placeholder="เช่น นายสมชาย ใจดี"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    ระดับชั้น / ห้อง / กลุ่มสาระ <span className="text-red-500">*</span>:
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editGradeRoom}
+                    onChange={(e) => setEditGradeRoom(e.target.value)}
+                    placeholder="เช่น ม.5/2"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Nickname & Phone */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    ชื่อเล่น (เรียกรับอาหาร) <span className="text-red-500">*</span>:
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editNickname}
+                    onChange={(e) => setEditNickname(e.target.value)}
+                    placeholder="เช่น ก้อง"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    เบอร์โทรศัพท์ <span className="text-red-500">*</span>:
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    placeholder="0812345678"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold focus:bg-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Role & PromptPay */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    บทบาทการใช้งาน (Role):
+                  </label>
+                  <select
+                    value={editRole}
+                    onChange={(e) => setEditRole(e.target.value as UserRole)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="STUDENT">นักเรียน (STUDENT)</option>
+                    <option value="TEACHER">ครู / บุคลากร (TEACHER)</option>
+                    <option value="MERCHANT">แม่ค้า / พ่อค้า (MERCHANT)</option>
+                    <option value="ADMIN">ผู้ดูแลระบบ (ADMIN)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    พร้อมเพย์คืนเงิน (PromptPay):
+                  </label>
+                  <input
+                    type="text"
+                    value={editPromptPayRefund}
+                    onChange={(e) => setEditPromptPayRefund(e.target.value)}
+                    placeholder="0812345678"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold focus:bg-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Status toggle */}
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                <div>
+                  <span className="font-bold text-slate-800 block text-xs">สถานะการใช้งาน (Active):</span>
+                  <span className="text-[10px] text-slate-500">หากปิด บัญชีจะถูกระงับการสั่งซื้อชั่วคราว</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={editIsActive}
+                  onChange={(e) => setEditIsActive(e.target.checked)}
+                  className="w-5 h-5 rounded accent-blue-600 cursor-pointer"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-extrabold text-xs rounded-2xl shadow-md transition flex items-center justify-center gap-1.5"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>บันทึกการแก้ไขข้อมูลผู้ใช้</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsUserEditModalOpen(false)}
                   className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-2xl transition"
                 >
                   ยกเลิก

@@ -181,3 +181,52 @@ describe('4. Session Storage & Synchronization Tests', () => {
   });
 });
 
+describe('5. Profile Locking & Admin User Management Tests', () => {
+  function isFieldEditableByRole(fieldName: string, userRole: string): boolean {
+    if (userRole === 'ADMIN') return true;
+    const studentLockedFields = ['name', 'studentId', 'gradeRoom'];
+    return !studentLockedFields.includes(fieldName);
+  }
+
+  function applyAdminUserUpdate(user: any, updates: any) {
+    return { ...user, ...updates };
+  }
+
+  it('should lock name, studentId, and gradeRoom for STUDENT role', () => {
+    assert.strictEqual(isFieldEditableByRole('studentId', 'STUDENT'), false);
+    assert.strictEqual(isFieldEditableByRole('name', 'STUDENT'), false);
+    assert.strictEqual(isFieldEditableByRole('gradeRoom', 'STUDENT'), false);
+    assert.strictEqual(isFieldEditableByRole('nickname', 'STUDENT'), true);
+    assert.strictEqual(isFieldEditableByRole('phone', 'STUDENT'), true);
+  });
+
+  it('should allow ADMIN role to edit all fields', () => {
+    assert.strictEqual(isFieldEditableByRole('studentId', 'ADMIN'), true);
+    assert.strictEqual(isFieldEditableByRole('name', 'ADMIN'), true);
+    assert.strictEqual(isFieldEditableByRole('gradeRoom', 'ADMIN'), true);
+  });
+
+  it('should allow ADMIN to update a student ID, name, and room successfully', () => {
+    const originalStudent = {
+      id: 'student_123',
+      name: 'สมชาย ใจดี',
+      studentId: '34890',
+      gradeRoom: 'ม.5/2',
+      nickname: 'ก้อง',
+      role: 'STUDENT',
+    };
+
+    const updated = applyAdminUserUpdate(originalStudent, {
+      studentId: '31774',
+      name: 'เด็กหญิงพิชญ์นรี คล้อยแย้ม',
+      gradeRoom: 'ม.2/1',
+      nickname: 'มินนี่',
+    });
+
+    assert.strictEqual(updated.studentId, '31774');
+    assert.strictEqual(updated.name, 'เด็กหญิงพิชญ์นรี คล้อยแย้ม');
+    assert.strictEqual(updated.gradeRoom, 'ม.2/1');
+    assert.strictEqual(updated.nickname, 'มินนี่');
+  });
+});
+

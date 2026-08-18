@@ -144,25 +144,34 @@ export default function ProfilePage() {
         </div>
 
         <div className="p-6 space-y-4 text-xs">
-          {/* Name */}
+          {/* Locked Notice for Students */}
+          {currentUser.role !== 'ADMIN' && (
+            <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center gap-2.5 text-slate-600">
+              <span className="text-base">🔒</span>
+              <div className="flex-1 text-[11px] leading-relaxed">
+                <span className="font-bold text-slate-800">ข้อมูลทะเบียนทางการถูกล็อค</span>
+                <p className="text-slate-500 text-[10px]">รหัสนักเรียน ชื่อจริง และห้องเรียนผูกกับทะเบียนโรงเรียน หากต้องการแก้ไขกรุณาติดต่อแอดมิน</p>
+              </div>
+            </div>
+          )}
+
+          {/* Name & Nickname */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block font-bold text-slate-700 mb-1.5 flex items-center justify-between">
                 <span>ชื่อ-นามสกุลจริง <span className="text-red-500">*</span></span>
-                {isLockedByDatabase && (
-                  <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold border border-emerald-200">
-                    🔒 ทะเบียนทางการ
-                  </span>
-                )}
+                <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold border border-emerald-200">
+                  🔒 ทะเบียนทางการ
+                </span>
               </label>
               <input
                 type="text"
                 required
-                readOnly={isLockedByDatabase}
+                readOnly={currentUser.role !== 'ADMIN'}
                 value={name}
                 onChange={(e) => { setName(e.target.value); markChanged(); }}
                 className={`w-full p-3 border rounded-2xl transition font-medium ${
-                  isLockedByDatabase
+                  currentUser.role !== 'ADMIN'
                     ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed border-slate-300'
                     : 'bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-brand-400 focus:border-brand-400'
                 }`}
@@ -192,19 +201,17 @@ export default function ProfilePage() {
                   <BookOpen className="w-3 h-3 text-slate-500" />
                   ระดับชั้น / ห้อง / ตำแหน่ง
                 </span>
-                {isLockedByDatabase && (
-                  <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold border border-emerald-200">
-                    🔒 ล็อค
-                  </span>
-                )}
+                <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold border border-emerald-200">
+                  🔒 ทะเบียนทางการ
+                </span>
               </label>
               <input
                 type="text"
-                readOnly={isLockedByDatabase}
+                readOnly={currentUser.role !== 'ADMIN'}
                 value={gradeRoom}
                 onChange={(e) => { setGradeRoom(e.target.value); markChanged(); }}
                 className={`w-full p-3 border rounded-2xl transition ${
-                  isLockedByDatabase
+                  currentUser.role !== 'ADMIN'
                     ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed border-slate-300 font-bold'
                     : 'bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-brand-400 focus:border-brand-400'
                 }`}
@@ -212,38 +219,31 @@ export default function ProfilePage() {
               />
             </div>
             <div>
-              <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1">
-                <Hash className="w-3 h-3 text-slate-500" />
-                รหัสนักเรียน (Student ID 5 หลัก)
+              <label className="block font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                <span className="flex items-center gap-1">
+                  <Hash className="w-3 h-3 text-slate-500" />
+                  รหัสนักเรียน (5 หลัก)
+                </span>
+                <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold border border-emerald-200">
+                  🔒 ล็อคถาวร
+                </span>
               </label>
               <input
                 type="text"
+                readOnly={currentUser.role !== 'ADMIN'}
                 value={studentId}
                 onChange={(e) => {
-                  const val = e.target.value.replace(/[^0-9]/g, '');
-                  setStudentId(val);
-                  markChanged();
-                  if (val.length >= 4) {
-                    import('@/lib/studentsLookup').then(({ findStudentById }) => {
-                      const res = findStudentById(val);
-                      if (res.found && res.student) {
-                        setName(res.student.fullName);
-                        setGradeRoom(res.student.gradeRoom);
-                        setIsLockedByDatabase(true);
-                        showToast(
-                          'success',
-                          'พบข้อมูลนักเรียน! 🎓',
-                          `${res.student.fullName} (${res.student.gradeRoom})`
-                        );
-                      } else {
-                        setIsLockedByDatabase(false);
-                      }
-                    });
-                  } else {
-                    setIsLockedByDatabase(false);
+                  if (currentUser.role === 'ADMIN') {
+                    const val = e.target.value.replace(/[^0-9]/g, '');
+                    setStudentId(val);
+                    markChanged();
                   }
                 }}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-brand-400 focus:border-brand-400 transition font-mono font-bold tracking-widest"
+                className={`w-full p-3 border rounded-2xl transition font-mono font-bold tracking-widest ${
+                  currentUser.role !== 'ADMIN'
+                    ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed border-slate-300'
+                    : 'bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-brand-400 focus:border-brand-400'
+                }`}
                 placeholder="เช่น 34890 หรือ 31774"
               />
             </div>

@@ -103,6 +103,7 @@ interface AppContextType {
   // Users Management (Admin)
   users: UserProfile[];
   toggleUserStatus: (userId: string) => void;
+  adminUpdateUser: (userId: string, updates: Partial<UserProfile>) => void;
 
   // System Settings (Admin)
   systemSettings: SystemSettings;
@@ -1597,6 +1598,46 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
+  const adminUpdateUser = (userId: string, updates: Partial<UserProfile>) => {
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === userId) {
+          const updated = { ...u, ...updates };
+
+          // If updating currently logged in user, sync current session
+          if (currentUser.id === userId) {
+            setCurrentUser((prevCur) => ({ ...prevCur, ...updates }));
+            try {
+              localStorage.setItem('sappha_auth_user', JSON.stringify({ ...currentUser, ...updates }));
+            } catch (e) {}
+          }
+
+          // Sync to Supabase
+          import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+            if (isSupabaseConfigured && supabase) {
+              const payload: any = {};
+              if (updates.name !== undefined) payload.name = updates.name;
+              if (updates.nickname !== undefined) payload.nickname = updates.nickname;
+              if (updates.studentId !== undefined) payload.student_id = updates.studentId;
+              if (updates.gradeRoom !== undefined) payload.grade_room = updates.gradeRoom;
+              if (updates.phone !== undefined) payload.phone = updates.phone;
+              if (updates.promptPayRefund !== undefined) payload.promptpay_refund = updates.promptPayRefund;
+              if (updates.role !== undefined) payload.role = updates.role;
+              if (updates.isActive !== undefined) payload.is_active = updates.isActive;
+
+              supabase.from('users').update(payload).eq('id', userId).then();
+            }
+          }).catch(() => {});
+
+          return updated;
+        }
+        return u;
+      })
+    );
+
+    showToast('success', 'แก้ไขข้อมูลผู้ใช้สำเร็จ 🛡️', 'ข้อมูลนักเรียน/ผู้ใช้ได้รับการอัปเดตเรียบร้อย');
+  };
+
   // System Settings
   const updateSystemSettings = (settings: Partial<SystemSettings>) => {
     setSystemSettings((prev) => ({ ...prev, ...settings }));
@@ -1771,6 +1812,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         recordFeePayment,
         users,
         toggleUserStatus,
+        adminUpdateUser,
         systemSettings,
         updateSystemSettings,
         adminOverrideOrderStatus,
