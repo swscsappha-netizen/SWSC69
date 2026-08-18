@@ -370,10 +370,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     import('@/lib/liff').then(({ initLiff }) => {
       initLiff().then((res) => {
         if (res.success && res.profile) {
+          const isLineAdmin = res.profile.userId === 'U203ff66b7e535c901dfbfa86d93eef46';
           setCurrentUser((prev) => ({
             ...prev,
             name: res.profile!.displayName || prev.name,
             avatarUrl: res.profile!.pictureUrl || prev.avatarUrl,
+            lineUserId: res.profile!.userId,
+            role: isLineAdmin ? 'ADMIN' : prev.role,
+            isLoggedIn: true,
           }));
         }
       });

@@ -14,6 +14,7 @@ export interface UserProfile {
   shopId?: string; // If merchant
   isActive?: boolean;
   isLoggedIn?: boolean;
+  lineUserId?: string;
   joinedAt?: string;
 }
 

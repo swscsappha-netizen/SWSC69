@@ -25,8 +25,12 @@ export default function LoginPage() {
   const [step, setStep] = useState<'LOGIN' | 'ONBOARDING'>('LOGIN');
   const [loading, setLoading] = useState(false);
 
+  // Known Admin LINE UserIds
+  const ADMIN_LINE_IDS = ['U203ff66b7e535c901dfbfa86d93eef46'];
+
   // Line Simulated Profile
   const [lineProfile, setLineProfile] = useState<{
+    userId?: string;
     name: string;
     avatarUrl: string;
   }>({
@@ -49,12 +53,36 @@ export default function LoginPage() {
     import('@/lib/liff').then(({ initLiff }) => {
       initLiff().then((res) => {
         if (res.success && res.profile) {
+          const isLineAdmin = ADMIN_LINE_IDS.includes(res.profile.userId);
           setLineProfile({
+            userId: res.profile.userId,
             name: res.profile.displayName,
             avatarUrl: res.profile.pictureUrl || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&q=80',
           });
           setFullName(res.profile.displayName);
           setNickname(res.profile.displayName.slice(0, 10));
+
+          // If Admin logs in via LINE LIFF, auto-login as ADMIN!
+          if (isLineAdmin) {
+            updateUserProfile({
+              id: res.profile.userId,
+              name: res.profile.displayName,
+              nickname: 'แอดมิน',
+              studentId: 'ADMIN-01',
+              gradeRoom: 'ผู้ดูแลระบบโรงเรียน',
+              phone: '089-123-4567',
+              promptPayNumber: '0891234567',
+              role: 'ADMIN',
+              avatarUrl: res.profile.pictureUrl,
+              lineUserId: res.profile.userId,
+              isActive: true,
+              isLoggedIn: true,
+            });
+            showToast('success', 'ยินดีต้อนรับผู้ดูแลระบบ! 🛡️', `เข้าสู่ระบบในฐานะ Admin (${res.profile.displayName})`);
+            router.push('/admin');
+            return;
+          }
+
           setStep('ONBOARDING');
         }
       });
@@ -80,26 +108,31 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
 
+    const isLineAdmin = lineProfile.userId && ADMIN_LINE_IDS.includes(lineProfile.userId);
+    const effectiveRole = isLineAdmin ? 'ADMIN' : selectedRole;
+
     setTimeout(() => {
-      switchRole(selectedRole);
+      switchRole(effectiveRole);
       updateUserProfile({
         name: fullName.trim() || lineProfile.name,
-        nickname: nickname.trim() || (selectedRole === 'TEACHER' ? 'ครู' : 'ก้อง'),
-        studentId: studentId.trim() || (selectedRole === 'TEACHER' ? 'T-STAFF' : '45892'),
-        gradeRoom: gradeRoom.trim() || (selectedRole === 'TEACHER' ? 'กลุ่มสาระการเรียนรู้' : 'ม.5/2'),
+        nickname: nickname.trim() || (effectiveRole === 'ADMIN' ? 'แอดมิน' : selectedRole === 'TEACHER' ? 'ครู' : 'ก้อง'),
+        studentId: studentId.trim() || (effectiveRole === 'ADMIN' ? 'ADMIN-01' : selectedRole === 'TEACHER' ? 'T-STAFF' : '45892'),
+        gradeRoom: gradeRoom.trim() || (effectiveRole === 'ADMIN' ? 'ผู้ดูแลระบบโรงเรียน' : selectedRole === 'TEACHER' ? 'กลุ่มสาระการเรียนรู้' : 'ม.5/2'),
         phone: phone.trim() || '089-123-4567',
         promptPayNumber: promptPay.trim() || phone.trim() || '0891234567',
         promptPayRefund: promptPay.trim() || '0891234567',
         avatarUrl: lineProfile.avatarUrl,
-        role: selectedRole,
+        lineUserId: lineProfile.userId,
+        role: effectiveRole,
         isActive: true,
+        isLoggedIn: true,
       });
 
       // Sync to Supabase
       import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
         if (isSupabaseConfigured && supabase) {
           supabase.from('users').upsert({
-            id: `user_${Date.now()}`,
+            id: lineProfile.userId || `user_${Date.now()}`,
             name: fullName.trim() || lineProfile.name,
             nickname: nickname.trim(),
             student_id: studentId.trim(),
@@ -107,7 +140,7 @@ export default function LoginPage() {
             phone: phone.trim(),
             promptpay_number: promptPay.trim(),
             promptpay_refund: promptPay.trim(),
-            role: selectedRole,
+            role: effectiveRole,
             avatar_url: lineProfile.avatarUrl,
             is_active: true,
           }).then();
@@ -115,9 +148,14 @@ export default function LoginPage() {
       }).catch(() => {});
 
       setLoading(false);
-      const greeting = selectedRole === 'TEACHER' ? `สวัสดีครับคุณครู ${nickname}` : `สวัสดีครับน้อง ${nickname} (${gradeRoom})`;
-      showToast('success', 'ลงทะเบียนเข้าสู่ระบบสำเร็จ! 🎉', greeting);
-      router.push('/');
+      if (effectiveRole === 'ADMIN') {
+        showToast('success', 'เข้าสู่ระบบแอดมินสำเร็จ! 🛡️', 'ยินดีต้อนรับผู้ดูแลระบบโรงเรียน');
+        router.push('/admin');
+      } else {
+        const greeting = selectedRole === 'TEACHER' ? `สวัสดีครับคุณครู ${nickname}` : `สวัสดีครับน้อง ${nickname} (${gradeRoom})`;
+        showToast('success', 'ลงทะเบียนเข้าสู่ระบบสำเร็จ! 🎉', greeting);
+        router.push('/');
+      }
     }, 600);
   };
 
