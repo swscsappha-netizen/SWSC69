@@ -11,21 +11,38 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // Check localStorage auth state
-    const savedLoggedIn = localStorage.getItem('sappha_is_logged_in') === 'true';
-    const isUserLoggedIn = currentUser.isLoggedIn || savedLoggedIn;
+    // Always allow /login to render — LIFF handles the auth there
+    if (pathname === '/login') {
+      setIsChecking(false);
+      return;
+    }
 
-    if (!isUserLoggedIn && pathname !== '/login') {
+    // Check localStorage auth state (persistent session)
+    let savedAuth: any = null;
+    try {
+      const savedLoggedIn = localStorage.getItem('sappha_is_logged_in') === 'true';
+      const savedAuthRaw = localStorage.getItem('sappha_auth_user');
+      if (savedLoggedIn && savedAuthRaw) {
+        savedAuth = JSON.parse(savedAuthRaw);
+      }
+    } catch (e) {}
+
+    const isUserLoggedIn = currentUser.isLoggedIn || !!savedAuth;
+
+    if (!isUserLoggedIn) {
       router.replace('/login');
-    } else if (isUserLoggedIn && pathname === '/login') {
-      router.replace('/');
     } else {
       setIsChecking(false);
     }
   }, [currentUser.isLoggedIn, pathname, router]);
 
-  // If not logged in and on a protected page, show minimal smooth loader
-  if (isChecking && pathname !== '/login') {
+  // Allow /login page to always render without blocking
+  if (pathname === '/login') {
+    return <>{children}</>;
+  }
+
+  // Show loader while checking auth on protected pages
+  if (isChecking) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center p-4 space-y-4">
         <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-500 to-amber-400 text-white flex items-center justify-center font-black text-xl shadow-lg animate-pulse">
