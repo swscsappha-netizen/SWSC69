@@ -4,36 +4,22 @@ import React, { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 
-/**
- * Routes that do not require authentication:
- * - / (Home / Food Market Catalog)
- * - /login (Login & Onboarding)
- * - /shop/* (Shop Details & Menus)
- */
-function checkIsPublicRoute(pathname: string): boolean {
-  return (
-    pathname === '/' ||
-    pathname === '/login' ||
-    pathname.startsWith('/shop')
-  );
-}
-
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const { currentUser } = useApp();
   const pathname = usePathname();
   const router = useRouter();
 
-  const isPublic = checkIsPublicRoute(pathname);
+  // /login is always allowed without blocking
+  const isLoginPage = pathname === '/login';
 
   // Synchronously check if session exists in localStorage or state
-  const isImmediatelyAuthorized =
-    isPublic ||
+  const isUserAuthenticated =
     currentUser.isLoggedIn ||
     (typeof window !== 'undefined' &&
       localStorage.getItem('sappha_is_logged_in') === 'true' &&
       !!localStorage.getItem('sappha_auth_user'));
 
-  const [isAuthorized, setIsAuthorized] = useState(isImmediatelyAuthorized);
+  const [isAuthorized, setIsAuthorized] = useState(isLoginPage || isUserAuthenticated);
 
   const routerRef = useRef(router);
   useEffect(() => {
@@ -41,13 +27,13 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   useEffect(() => {
-    // Public routes are always authorized immediately with zero redirect
-    if (checkIsPublicRoute(pathname)) {
+    // /login is always accessible
+    if (pathname === '/login') {
       setIsAuthorized(true);
       return;
     }
 
-    // Check auth status for protected routes (/checkout, /orders, /profile, /merchant, /admin)
+    // Check auth status for all other pages
     let savedAuth: any = null;
     try {
       const savedLoggedIn = localStorage.getItem('sappha_is_logged_in') === 'true';
@@ -67,12 +53,12 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [currentUser.isLoggedIn, pathname]);
 
-  // If public route, render immediately with 0ms delay and zero blocking
-  if (isPublic) {
+  // /login page is always open and accessible
+  if (isLoginPage) {
     return <>{children}</>;
   }
 
-  // Show clean loading indicator only when accessing protected routes while unauthorized
+  // Show clean loading state while unauthenticated on protected route
   if (!isAuthorized) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center p-4 space-y-4">
@@ -80,7 +66,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           SW
         </div>
         <div className="text-xs font-bold text-slate-500 animate-pulse">
-          กำลังตรวจสอบสถานะการเข้าสู่ระบบ...
+          กำลังเข้าสู่ระบบ...
         </div>
       </div>
     );
