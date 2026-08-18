@@ -22,7 +22,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { currentUser, switchRole, updateUserProfile, showToast } = useApp();
 
-  const [step, setStep] = useState<'LOGIN' | 'ONBOARDING'>('LOGIN');
+  const [step, setStep] = useState<'LOGIN' | 'ONBOARDING'>('ONBOARDING');
   const [loading, setLoading] = useState(false);
 
   // Known Admin LINE UserIds
@@ -50,7 +50,7 @@ export default function LoginPage() {
   const [promptPay, setPromptPay] = useState('');
 
   React.useEffect(() => {
-    import('@/lib/liff').then(({ initLiff, loginWithLiff }) => {
+    import('@/lib/liff').then(({ initLiff }) => {
       initLiff().then((res) => {
         if (res.success && res.profile) {
           const isLineAdmin = ADMIN_LINE_IDS.includes(res.profile.userId);
@@ -80,13 +80,7 @@ export default function LoginPage() {
             });
             showToast('success', 'ยินดีต้อนรับผู้ดูแลระบบ! 🛡️', `เข้าสู่ระบบในฐานะ Admin (${res.profile.displayName})`);
             router.replace('/admin');
-            return;
           }
-
-          setStep('ONBOARDING');
-        } else {
-          // Immediately trigger LINE Auto-Login
-          loginWithLiff();
         }
       });
     }).catch(() => {});
@@ -102,8 +96,8 @@ export default function LoginPage() {
     setTimeout(() => {
       switchRole(effectiveRole);
       updateUserProfile({
-        name: fullName.trim() || lineProfile.name,
-        nickname: nickname.trim() || (effectiveRole === 'ADMIN' ? 'แอดมิน' : selectedRole === 'TEACHER' ? 'ครู' : 'ก้อง'),
+        name: fullName.trim() || lineProfile.name || (selectedRole === 'TEACHER' ? 'คุณครู สรรพวิทยาคม' : 'นักเรียน สรรพวิทยาคม'),
+        nickname: nickname.trim() || (effectiveRole === 'ADMIN' ? 'แอดมิน' : selectedRole === 'TEACHER' ? 'ครู' : 'ส.ว.'),
         studentId: studentId.trim() || (effectiveRole === 'ADMIN' ? 'ADMIN-01' : selectedRole === 'TEACHER' ? 'T-STAFF' : '45892'),
         gradeRoom: gradeRoom.trim() || (effectiveRole === 'ADMIN' ? 'ผู้ดูแลระบบโรงเรียน' : selectedRole === 'TEACHER' ? 'กลุ่มสาระการเรียนรู้' : 'ม.5/2'),
         phone: phone.trim() || '089-123-4567',
@@ -121,7 +115,7 @@ export default function LoginPage() {
         if (isSupabaseConfigured && supabase) {
           supabase.from('users').upsert({
             id: lineProfile.userId || `user_${Date.now()}`,
-            name: fullName.trim() || lineProfile.name,
+            name: fullName.trim() || lineProfile.name || 'ผู้ใช้งาน ส.ว.',
             nickname: nickname.trim(),
             student_id: studentId.trim(),
             grade_room: gradeRoom.trim(),
@@ -140,11 +134,11 @@ export default function LoginPage() {
         showToast('success', 'เข้าสู่ระบบแอดมินสำเร็จ! 🛡️', 'ยินดีต้อนรับผู้ดูแลระบบโรงเรียน');
         router.replace('/admin');
       } else {
-        const greeting = selectedRole === 'TEACHER' ? `สวัสดีครับคุณครู ${nickname}` : `สวัสดีครับน้อง ${nickname} (${gradeRoom})`;
-        showToast('success', 'ลงทะเบียนเข้าสู่ระบบสำเร็จ! 🎉', greeting);
+        const greeting = selectedRole === 'TEACHER' ? `สวัสดีครับคุณครู ${nickname || fullName}` : `สวัสดีครับน้อง ${nickname || fullName} (${gradeRoom})`;
+        showToast('success', 'เข้าสู่ระบบสำเร็จ! 🎉', greeting);
         router.replace('/');
       }
-    }, 600);
+    }, 400);
   };
 
   return (
@@ -152,34 +146,17 @@ export default function LoginPage() {
       <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200/80 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header Hero */}
-        <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-8 text-center text-white relative">
-          <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-tr from-brand-500 to-amber-400 text-white flex items-center justify-center font-black text-2xl shadow-lg mb-3 animate-pulse">
+        <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-7 text-center text-white relative">
+          <div className="w-14 h-14 mx-auto rounded-3xl bg-gradient-to-tr from-brand-500 to-amber-400 text-white flex items-center justify-center font-black text-2xl shadow-lg mb-2.5">
             SW
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-white">
+          <h1 className="text-xl font-black tracking-tight text-white">
             Sappha PreOrder
           </h1>
-          <p className="text-xs text-slate-300 mt-1">
+          <p className="text-[11px] text-slate-300 mt-0.5">
             เว็บสั่งอาหารล่วงหน้า โรงเรียนสรรพวิทยาคม
           </p>
         </div>
-
-        {/* Step 1: Zero-Click Auto-Login Screen */}
-        {step === 'LOGIN' && (
-          <div className="p-8 text-center space-y-6">
-            <div className="flex justify-center">
-              <div className="w-12 h-12 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
-            </div>
-            <div className="space-y-1.5">
-              <h2 className="font-extrabold text-base text-slate-900">
-                กำลังเข้าสู่ระบบผ่าน LINE อัตโนมัติ...
-              </h2>
-              <p className="text-xs text-slate-500">
-                ระบบกำลังเชื่อมต่อบัญชี LINE ของคุณ กรุณารอสักครู่
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* Step 2: First Time Onboarding Form */}
         {step === 'ONBOARDING' && (
