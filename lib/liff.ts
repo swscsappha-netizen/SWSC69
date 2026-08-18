@@ -16,14 +16,11 @@ let isInitialized = false;
  * Initialize LINE LIFF SDK
  */
 export async function initLiff(): Promise<{ success: boolean; profile?: LiffProfile; isInClient: boolean }> {
-  const liffId = process.env.NEXT_PUBLIC_LINE_LIFF_ID;
-
-  if (!liffId || liffId.includes('placeholder') || liffId === 'your-line-liff-id') {
-    return {
-      success: false,
-      isInClient: false,
-    };
+  if (typeof window === 'undefined') {
+    return { success: false, isInClient: false };
   }
+
+  const liffId = process.env.NEXT_PUBLIC_LINE_LIFF_ID || '2011161264-4eQlRIAS';
 
   try {
     if (!isInitialized) {
@@ -34,19 +31,21 @@ export async function initLiff(): Promise<{ success: boolean; profile?: LiffProf
     const isInClient = liff.isInClient();
 
     if (liff.isLoggedIn()) {
-      const profile = await liff.getProfile();
-      return {
-        success: true,
-        isInClient,
-        profile: {
-          userId: profile.userId,
-          displayName: profile.displayName,
-          pictureUrl: profile.pictureUrl,
-          statusMessage: profile.statusMessage,
-        },
-      };
-    } else if (isInClient) {
-      liff.login();
+      try {
+        const profile = await liff.getProfile();
+        return {
+          success: true,
+          isInClient,
+          profile: {
+            userId: profile.userId,
+            displayName: profile.displayName,
+            pictureUrl: profile.pictureUrl,
+            statusMessage: profile.statusMessage,
+          },
+        };
+      } catch (profileErr) {
+        console.warn('Failed to get LIFF profile:', profileErr);
+      }
     }
 
     return { success: true, isInClient };
