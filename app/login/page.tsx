@@ -171,37 +171,10 @@ export default function LoginPage() {
               <span>{loading ? 'กำลังเชื่อมต่อ LINE...' : 'เข้าสู่ระบบด้วย LINE (LINE Login)'}</span>
             </button>
 
-            <div className="flex items-center gap-3">
-              <div className="h-px flex-1 bg-slate-200" />
-              <span className="text-[11px] text-slate-400 font-bold uppercase">หรือทดสอบด้วยบัญชีตัวอย่าง</span>
-              <div className="h-px flex-1 bg-slate-200" />
-            </div>
-
-            {/* Quick Role Switch Buttons for Testing */}
-            <div className="grid grid-cols-3 gap-2 text-xs">
-              <button
-                onClick={() => handleQuickSwitch('STUDENT')}
-                className="p-3 rounded-2xl bg-orange-50 hover:bg-orange-100 text-brand-700 font-bold border border-orange-200 flex flex-col items-center gap-1 transition"
-              >
-                <User className="w-4 h-4" />
-                <span>นักเรียน</span>
-              </button>
-
-              <button
-                onClick={() => handleQuickSwitch('MERCHANT')}
-                className="p-3 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold border border-emerald-200 flex flex-col items-center gap-1 transition"
-              >
-                <Store className="w-4 h-4" />
-                <span>แม่ค้า</span>
-              </button>
-
-              <button
-                onClick={() => handleQuickSwitch('ADMIN')}
-                className="p-3 rounded-2xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold border border-blue-200 flex flex-col items-center gap-1 transition"
-              >
-                <ShieldCheck className="w-4 h-4" />
-                <span>แอดมิน</span>
-              </button>
+            <div className="text-center pt-2">
+              <p className="text-[11px] text-slate-400">
+                ระบบสั่งอาหารล่วงหน้า สำหรับนักเรียน ครู และบุคลากร ส.ว.
+              </p>
             </div>
           </div>
         )}

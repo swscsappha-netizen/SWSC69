@@ -3,7 +3,6 @@ import './globals.css';
 import { AppProvider } from '@/context/AppContext';
 import Navbar from '@/components/Navbar';
 import BottomNav from '@/components/BottomNav';
-import RoleSwitcher from '@/components/RoleSwitcher';
 import ToastContainer from '@/components/ToastContainer';
 import FloatingCartBar from '@/components/FloatingCartBar';
 
@@ -32,9 +31,6 @@ export default function RootLayout({
 
           {/* Mobile Bottom Navigation */}
           <BottomNav />
-
-          {/* 1-Click Role Switcher (Student / Merchant / Admin) */}
-          <RoleSwitcher />
 
           {/* Toasts */}
           <ToastContainer />
