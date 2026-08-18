@@ -742,6 +742,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const cartTotalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const cartTotalPrice = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
 
+  const triggerPushNotification = (payload: {
+    type: 'NEW_ORDER' | 'ORDER_CONFIRMED' | 'ORDER_READY' | 'ORDER_CANCELLED';
+    targetLineUserId: string;
+    order?: Order;
+    reason?: string;
+  }) => {
+    if (!payload.targetLineUserId) return;
+    fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).catch(() => {});
+  };
+
   // Orders operations
   const createOrders = (
     shopOrders: {
@@ -795,7 +809,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     setOrders((prev) => [...createdOrders, ...prev]);
 
-    // Decrease product quotas & Save to Supabase
+    // Decrease product quotas & Save to Supabase & Notify Merchants
     createdOrders.forEach((order) => {
       order.items.forEach((item) => {
         setProducts((prev) =>
@@ -837,6 +851,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             .then();
         }
       }).catch(() => {});
+
+      // Notify Merchant via LINE Push Message
+      const merchantUser = users.find(
+        (u) => (u.shopId === order.shopId || u.role === 'MERCHANT') && u.lineUserId
+      );
+      if (merchantUser?.lineUserId) {
+        triggerPushNotification({
+          type: 'NEW_ORDER',
+          targetLineUserId: merchantUser.lineUserId,
+          order,
+        });
+      }
     });
 
     clearCart();
@@ -873,6 +899,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const approveOrderSlip = (orderId: string) => {
+    const targetOrder = orders.find((o) => o.id === orderId);
+
     setOrders((prev) =>
       prev.map((order) =>
         order.id === orderId
@@ -894,10 +922,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     }).catch(() => {});
 
+    // Notify Student via LINE Push Message
+    if (targetOrder) {
+      const studentUser = users.find(
+        (u) => u.id === targetOrder.userId || u.lineUserId === targetOrder.userId
+      );
+      const studentLineId =
+        studentUser?.lineUserId || (targetOrder.userId.startsWith('U') ? targetOrder.userId : '');
+      if (studentLineId) {
+        triggerPushNotification({
+          type: 'ORDER_CONFIRMED',
+          targetLineUserId: studentLineId,
+          order: { ...targetOrder, status: 'CONFIRMED' },
+        });
+      }
+    }
+
     showToast('success', 'อนุมัติสลิปสำเร็จ', `ยืนยันออเดอร์เรียบร้อยแล้ว พร้อมเตรียมอาหาร`);
   };
 
   const rejectOrderSlip = (orderId: string, reason: string, refundSlipUrl?: string) => {
+    const targetOrder = orders.find((o) => o.id === orderId);
+
     setOrders((prev) =>
       prev.map((order) =>
         order.id === orderId
@@ -925,10 +971,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     }).catch(() => {});
 
+    // Notify Student via LINE Push Message
+    if (targetOrder) {
+      const studentUser = users.find(
+        (u) => u.id === targetOrder.userId || u.lineUserId === targetOrder.userId
+      );
+      const studentLineId =
+        studentUser?.lineUserId || (targetOrder.userId.startsWith('U') ? targetOrder.userId : '');
+      if (studentLineId) {
+        triggerPushNotification({
+          type: 'ORDER_CANCELLED',
+          targetLineUserId: studentLineId,
+          order: { ...targetOrder, status: 'CANCELLED' },
+          reason,
+        });
+      }
+    }
+
     showToast('warning', 'ปฏิเสธและคืนเงินแล้ว', `แนบสลิปคืนเงินให้ออเดอร์เรียบร้อยแล้ว`);
   };
 
   const markOrderReady = (orderId: string) => {
+    const targetOrder = orders.find((o) => o.id === orderId);
+
     setOrders((prev) =>
       prev.map((order) =>
         order.id === orderId ? { ...order, status: 'READY' } : order
@@ -941,6 +1006,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         supabase.from('orders').update({ status: 'READY' }).eq('id', orderId).then();
       }
     }).catch(() => {});
+
+    // Notify Student via LINE Push Message
+    if (targetOrder) {
+      const studentUser = users.find(
+        (u) => u.id === targetOrder.userId || u.lineUserId === targetOrder.userId
+      );
+      const studentLineId =
+        studentUser?.lineUserId || (targetOrder.userId.startsWith('U') ? targetOrder.userId : '');
+      if (studentLineId) {
+        triggerPushNotification({
+          type: 'ORDER_READY',
+          targetLineUserId: studentLineId,
+          order: { ...targetOrder, status: 'READY' },
+        });
+      }
+    }
 
     showToast('success', 'อาหารพร้อมรับแล้ว', 'เปลี่ยนสถานะเป็น "พร้อมรับของที่หน้าร้าน"');
   };
@@ -959,7 +1040,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     }).catch(() => {});
 
-    showToast('success', 'ส่งมอบสินค้าสำเร็จ', 'บันทึกการรับอาหารเรียบร้อยแล้ว');
+    showToast('success', 'ส่งมอบอาหารแล้ว', 'เสร็จสิ้นกระบวนการออเดอร์เรียบร้อย');
   };
 
   const findOrderByPickupCode = (code: string) => {

@@ -1566,6 +1566,45 @@ export default function AdminPortalPage() {
                 <span>ทดสอบ Google Drive API</span>
               </button>
             </div>
+
+            {/* LINE Messaging API Status Section */}
+            <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h4 className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                  <span>🔔 ระบบแจ้งเตือน (LINE Push Messaging API)</span>
+                </h4>
+                <p className="text-[11px] text-slate-500">
+                  ส่งการ์ด Flex Message แจ้งเตือนออเดอร์ใหม่เข้า LINE แม่ค้า และแจ้งตั๋วอาหารเข้า LINE นักเรียน
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  showToast('info', 'กำลังส่งการแจ้งเตือน...', 'ทดสอบยิง LINE Flex Message เข้าบัญชีของคุณ');
+                  try {
+                    const res = await fetch('/api/notify', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        type: 'TEST',
+                        targetLineUserId: currentUser.lineUserId || currentUser.id,
+                      }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                      showToast('success', 'ส่งการแจ้งเตือนสำเร็จ! 🔔', data.message || 'ส่ง Flex Message เข้า LINE เรียบร้อย');
+                    } else {
+                      showToast('info', 'สถานะ LINE Notification', data.message || 'ระบบพร้อมใช้งาน');
+                    }
+                  } catch (e: any) {
+                    showToast('error', 'ทดสอบไม่สำเร็จ', e?.message || 'เชื่อมต่อ API ไม่สำเร็จ');
+                  }
+                }}
+                className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5 self-start sm:self-auto"
+              >
+                <span>ทดสอบ LINE แจ้งเตือน</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
