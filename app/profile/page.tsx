@@ -144,38 +144,31 @@ export default function ProfilePage() {
         </div>
 
         <div className="p-6 space-y-4 text-xs">
-          {/* Locked Notice for Students */}
-          {currentUser.role !== 'ADMIN' && (
-            <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center gap-2.5 text-slate-600">
-              <span className="text-base">🔒</span>
-              <div className="flex-1 text-[11px] leading-relaxed">
-                <span className="font-bold text-slate-800">ข้อมูลทะเบียนทางการถูกล็อค</span>
-                <p className="text-slate-500 text-[10px]">รหัสนักเรียน ชื่อจริง และห้องเรียนผูกกับทะเบียนโรงเรียน หากต้องการแก้ไขกรุณาติดต่อแอดมิน</p>
-              </div>
+          {/* Locked Notice */}
+          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center gap-2.5 text-slate-600">
+            <span className="text-base">🔒</span>
+            <div className="flex-1 text-[11px] leading-relaxed">
+              <span className="font-bold text-slate-800">ข้อมูลทะเบียนทางการถูกล็อคถาวร</span>
+              <p className="text-slate-500 text-[10px]">รหัสนักเรียน ชื่อจริง และห้องเรียนผูกกับทะเบียนโรงเรียน หากต้องการแก้ไขกรุณาติดต่อแอดมิน</p>
             </div>
-          )}
+          </div>
 
           {/* Name & Nickname */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block font-bold text-slate-700 mb-1.5 flex items-center justify-between">
-                <span>ชื่อ-นามสกุลจริง <span className="text-red-500">*</span></span>
+                <span>ชื่อ-นามสกุลจริง:</span>
                 <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold border border-emerald-200">
                   🔒 ทะเบียนทางการ
                 </span>
               </label>
               <input
                 type="text"
-                required
-                readOnly={currentUser.role !== 'ADMIN'}
+                readOnly
+                disabled
                 value={name}
-                onChange={(e) => { setName(e.target.value); markChanged(); }}
-                className={`w-full p-3 border rounded-2xl transition font-medium ${
-                  currentUser.role !== 'ADMIN'
-                    ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed border-slate-300'
-                    : 'bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-brand-400 focus:border-brand-400'
-                }`}
-                placeholder="เช่น นายสมชาย ใจดี"
+                className="w-full p-3 bg-slate-100/90 text-slate-700 border border-slate-300 rounded-2xl cursor-not-allowed font-medium"
+                placeholder="ชื่อ-นามสกุลจริง"
               />
             </div>
             <div>
@@ -207,15 +200,11 @@ export default function ProfilePage() {
               </label>
               <input
                 type="text"
-                readOnly={currentUser.role !== 'ADMIN'}
+                readOnly
+                disabled
                 value={gradeRoom}
-                onChange={(e) => { setGradeRoom(e.target.value); markChanged(); }}
-                className={`w-full p-3 border rounded-2xl transition ${
-                  currentUser.role !== 'ADMIN'
-                    ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed border-slate-300 font-bold'
-                    : 'bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-brand-400 focus:border-brand-400'
-                }`}
-                placeholder="เช่น ม.5/2 หรือ ครู/บุคลากร"
+                className="w-full p-3 bg-slate-100/90 text-slate-700 border border-slate-300 rounded-2xl cursor-not-allowed font-bold"
+                placeholder="เช่น ม.5/2"
               />
             </div>
             <div>
@@ -230,21 +219,11 @@ export default function ProfilePage() {
               </label>
               <input
                 type="text"
-                readOnly={currentUser.role !== 'ADMIN'}
+                readOnly
+                disabled
                 value={studentId}
-                onChange={(e) => {
-                  if (currentUser.role === 'ADMIN') {
-                    const val = e.target.value.replace(/[^0-9]/g, '');
-                    setStudentId(val);
-                    markChanged();
-                  }
-                }}
-                className={`w-full p-3 border rounded-2xl transition font-mono font-bold tracking-widest ${
-                  currentUser.role !== 'ADMIN'
-                    ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed border-slate-300'
-                    : 'bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-brand-400 focus:border-brand-400'
-                }`}
-                placeholder="เช่น 34890 หรือ 31774"
+                className="w-full p-3 bg-slate-100/90 text-slate-700 border border-slate-300 rounded-2xl cursor-not-allowed font-mono font-bold tracking-widest"
+                placeholder="เช่น 34890"
               />
             </div>
           </div>

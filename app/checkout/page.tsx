@@ -191,58 +191,74 @@ export default function CheckoutPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
           <div>
-            <label className="font-bold text-slate-700 block mb-1">ชื่อ-นามสกุลจริง:</label>
+            <label className="font-bold text-slate-700 block mb-1 flex items-center justify-between">
+              <span>ชื่อ-นามสกุลจริง:</span>
+              <span className="text-[10px] text-emerald-700 font-bold">🔒 ทะเบียนทางการ</span>
+            </label>
             <input
               type="text"
+              readOnly
+              disabled
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 font-medium"
-              placeholder="เช่น นายสมชาย ใจดี"
+              className="w-full p-3 bg-slate-100/90 text-slate-700 border border-slate-300 rounded-xl cursor-not-allowed font-medium"
+              placeholder="ชื่อ-นามสกุลจริง"
             />
           </div>
 
           <div>
-            <label className="font-bold text-slate-700 block mb-1">ชื่อเล่น (สำหรับเรียกขาน):</label>
+            <label className="font-bold text-slate-700 block mb-1">
+              ชื่อเล่น (สำหรับเรียกรับอาหาร) <span className="text-red-500">*</span>:
+            </label>
             <input
               type="text"
+              required
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 font-medium"
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 font-bold"
               placeholder="เช่น ก้อง"
             />
           </div>
 
           <div>
-            <label className="font-bold text-slate-700 block mb-1">ระดับชั้น/ห้องเรียน:</label>
+            <label className="font-bold text-slate-700 block mb-1 flex items-center justify-between">
+              <span>ระดับชั้น / ห้องเรียน:</span>
+              <span className="text-[10px] text-emerald-700 font-bold">🔒 ล็อค</span>
+            </label>
             <input
               type="text"
+              readOnly
+              disabled
               value={gradeRoom}
-              onChange={(e) => setGradeRoom(e.target.value)}
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 font-medium"
-              placeholder="เช่น ม.5/2 หรือ ครู/บุคลากร"
+              className="w-full p-3 bg-slate-100/90 text-slate-700 border border-slate-300 rounded-xl cursor-not-allowed font-bold"
+              placeholder="เช่น ม.5/2"
             />
           </div>
 
           <div>
-            <label className="font-bold text-slate-700 block mb-1">รหัสนักเรียน (ถ้ามี):</label>
+            <label className="font-bold text-slate-700 block mb-1 flex items-center justify-between">
+              <span>รหัสนักเรียน (5 หลัก):</span>
+              <span className="text-[10px] text-emerald-700 font-bold">🔒 ล็อคถาวร</span>
+            </label>
             <input
               type="text"
+              readOnly
+              disabled
               value={studentId}
-              onChange={(e) => setStudentId(e.target.value)}
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 font-medium"
-              placeholder="เช่น 45892"
+              className="w-full p-3 bg-slate-100/90 text-slate-700 border border-slate-300 rounded-xl cursor-not-allowed font-mono font-bold tracking-wider"
+              placeholder="เช่น 34890"
             />
           </div>
 
           <div className="sm:col-span-2">
             <label className="font-bold text-slate-700 block mb-1">
-              เบอร์โทรศัพท์ / พร้อมเพย์ (สำหรับรับเงินคืนกรณีของหมด):
+              เบอร์โทรศัพท์ / พร้อมเพย์ (สำหรับรับเงินคืนกรณีของหมด) <span className="text-red-500">*</span>:
             </label>
             <input
               type="text"
+              required
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 font-medium"
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 font-mono font-bold"
               placeholder="เช่น 089-123-4567"
             />
           </div>
