@@ -11,10 +11,11 @@ const ADMIN_LINE_IDS = ['U203ff66b7e535c901dfbfa86d93eef46'];
 
 export default function LoginPage() {
   const router = useRouter();
-  const { switchRole, updateUserProfile, showToast } = useApp();
+  const { currentUser, updateUserProfile, showToast } = useApp();
 
   const [loading, setLoading] = useState(false);
   const [isLiffConnecting, setIsLiffConnecting] = useState(true);
+  const hasRedirectedRef = React.useRef(false);
 
   // Line Profile (null userId = not logged in LINE yet)
   const [lineProfile, setLineProfile] = useState<{
@@ -22,8 +23,8 @@ export default function LoginPage() {
     name: string;
     avatarUrl: string;
   }>({
-    name: '',
-    avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
+    name: currentUser.name || '',
+    avatarUrl: currentUser.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
   });
 
   // Selected Role for onboarding
@@ -37,6 +38,19 @@ export default function LoginPage() {
   const [phone, setPhone] = useState('');
   const [promptPay, setPromptPay] = useState('');
   const [isLockedByDatabase, setIsLockedByDatabase] = useState(false);
+
+  useEffect(() => {
+    if (currentUser.isLoggedIn && !hasRedirectedRef.current) {
+      hasRedirectedRef.current = true;
+      if (currentUser.role === 'ADMIN') {
+        router.replace('/admin');
+      } else if (currentUser.role === 'MERCHANT') {
+        router.replace('/merchant');
+      } else {
+        router.replace('/');
+      }
+    }
+  }, [currentUser.isLoggedIn, currentUser.role, router]);
 
   useEffect(() => {
     let mounted = true;
@@ -70,7 +84,8 @@ export default function LoginPage() {
               .or(`line_user_id.eq.${res.profile.userId},id.eq.${res.profile.userId}`)
               .maybeSingle();
 
-            if (existingUser && existingUser.nickname && mounted) {
+            if (existingUser && existingUser.nickname && mounted && !hasRedirectedRef.current) {
+              hasRedirectedRef.current = true;
               const effectiveRole = isLineAdmin ? 'ADMIN' : (existingUser.role || 'STUDENT');
               updateUserProfile({
                 id: existingUser.id,

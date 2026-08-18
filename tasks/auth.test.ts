@@ -67,8 +67,12 @@ describe('2. LINE Receipt Flex Message Generation Tests', () => {
 describe('3. Auth Session Guard & Logic Tests', () => {
   const ADMIN_LINE_IDS = ['U203ff66b7e535c901dfbfa86d93eef46'];
 
+  function checkIsPublicRoute(pathname: string): boolean {
+    return pathname === '/' || pathname === '/login' || pathname.startsWith('/shop');
+  }
+
   function checkRouteAccess(pathname: string, isLoggedIn: boolean): { allowed: boolean; redirectTo?: string } {
-    if (pathname === '/login') {
+    if (checkIsPublicRoute(pathname)) {
       return { allowed: true };
     }
     if (isLoggedIn) {
@@ -84,20 +88,43 @@ describe('3. Auth Session Guard & Logic Tests', () => {
     return selectedRole;
   }
 
+  it('should allow / unconditionally for public browsing without bouncing', () => {
+    const res = checkRouteAccess('/', false);
+    assert.strictEqual(res.allowed, true);
+    assert.strictEqual(res.redirectTo, undefined);
+  });
+
   it('should allow /login unconditionally even when logged out', () => {
     const res = checkRouteAccess('/login', false);
     assert.strictEqual(res.allowed, true);
     assert.strictEqual(res.redirectTo, undefined);
   });
 
-  it('should redirect protected route / to /login when logged out', () => {
-    const res = checkRouteAccess('/', false);
+  it('should allow shop pages /shop/123 unconditionally for public browsing', () => {
+    const res = checkRouteAccess('/shop/123', false);
+    assert.strictEqual(res.allowed, true);
+  });
+
+  it('should redirect protected route /checkout to /login when logged out', () => {
+    const res = checkRouteAccess('/checkout', false);
     assert.strictEqual(res.allowed, false);
     assert.strictEqual(res.redirectTo, '/login');
   });
 
-  it('should allow protected route / when logged in', () => {
-    const res = checkRouteAccess('/', true);
+  it('should redirect protected route /orders to /login when logged out', () => {
+    const res = checkRouteAccess('/orders', false);
+    assert.strictEqual(res.allowed, false);
+    assert.strictEqual(res.redirectTo, '/login');
+  });
+
+  it('should redirect protected route /admin to /login when logged out', () => {
+    const res = checkRouteAccess('/admin', false);
+    assert.strictEqual(res.allowed, false);
+    assert.strictEqual(res.redirectTo, '/login');
+  });
+
+  it('should allow protected route /orders when logged in', () => {
+    const res = checkRouteAccess('/orders', true);
     assert.strictEqual(res.allowed, true);
     assert.strictEqual(res.redirectTo, undefined);
   });

@@ -4,14 +4,30 @@ import React, { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 
+/**
+ * Routes that do not require authentication:
+ * - / (Home / Food Market Catalog)
+ * - /login (Login & Onboarding)
+ * - /shop/* (Shop Details & Menus)
+ */
+function checkIsPublicRoute(pathname: string): boolean {
+  return (
+    pathname === '/' ||
+    pathname === '/login' ||
+    pathname.startsWith('/shop')
+  );
+}
+
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const { currentUser } = useApp();
   const pathname = usePathname();
   const router = useRouter();
 
-  // Instant check: if user is already logged in or on /login, authorize immediately
+  const isPublic = checkIsPublicRoute(pathname);
+
+  // Synchronously check if session exists in localStorage or state
   const isImmediatelyAuthorized =
-    pathname === '/login' ||
+    isPublic ||
     currentUser.isLoggedIn ||
     (typeof window !== 'undefined' &&
       localStorage.getItem('sappha_is_logged_in') === 'true' &&
@@ -25,12 +41,13 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   useEffect(() => {
-    if (pathname === '/login') {
+    // Public routes are always authorized immediately with zero redirect
+    if (checkIsPublicRoute(pathname)) {
       setIsAuthorized(true);
       return;
     }
 
-    // Check auth status
+    // Check auth status for protected routes (/checkout, /orders, /profile, /merchant, /admin)
     let savedAuth: any = null;
     try {
       const savedLoggedIn = localStorage.getItem('sappha_is_logged_in') === 'true';
@@ -45,34 +62,17 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     if (loggedIn) {
       setIsAuthorized(true);
     } else {
-      // Short 100ms grace period to allow client hydration to settle before redirecting
-      const timer = setTimeout(() => {
-        let finalSaved: any = null;
-        try {
-          if (localStorage.getItem('sappha_is_logged_in') === 'true') {
-            const raw = localStorage.getItem('sappha_auth_user');
-            if (raw) finalSaved = JSON.parse(raw);
-          }
-        } catch (e) {}
-
-        if (!currentUser.isLoggedIn && !finalSaved) {
-          setIsAuthorized(false);
-          routerRef.current.replace('/login');
-        } else {
-          setIsAuthorized(true);
-        }
-      }, 100);
-
-      return () => clearTimeout(timer);
+      setIsAuthorized(false);
+      routerRef.current.replace('/login');
     }
   }, [currentUser.isLoggedIn, pathname]);
 
-  // /login page is always open and accessible
-  if (pathname === '/login') {
+  // If public route, render immediately with 0ms delay and zero blocking
+  if (isPublic) {
     return <>{children}</>;
   }
 
-  // Show clean loading state only if unverified on protected route
+  // Show clean loading indicator only when accessing protected routes while unauthorized
   if (!isAuthorized) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center p-4 space-y-4">
