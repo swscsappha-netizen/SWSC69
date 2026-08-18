@@ -50,6 +50,8 @@ async function getOrCreateSubfolder(
       q: query,
       fields: 'files(id, name)',
       spaces: 'drive',
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true,
     });
 
     if (searchRes.data.files && searchRes.data.files.length > 0) {
@@ -66,6 +68,7 @@ async function getOrCreateSubfolder(
         parents: [parentId],
       },
       fields: 'id',
+      supportsAllDrives: true,
     });
 
     const newFolderId = createRes.data.id;
@@ -101,7 +104,7 @@ export async function uploadImageToGoogleDrive(
     const auth = new google.auth.JWT({
       email: clientEmail,
       key: privateKey,
-      scopes: ['https://www.googleapis.com/auth/drive.file'],
+      scopes: ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive'],
     });
 
     const drive = google.drive({ version: 'v3', auth });
@@ -149,18 +152,22 @@ export async function uploadImageToGoogleDrive(
         body: stream,
       },
       fields: 'id, webViewLink, webContentLink',
+      supportsAllDrives: true,
     });
 
     const fileId = res.data.id;
     if (fileId) {
       // Set public read permissions
-      await drive.permissions.create({
-        fileId,
-        requestBody: {
-          role: 'reader',
-          type: 'anyone',
-        },
-      });
+      try {
+        await drive.permissions.create({
+          fileId,
+          requestBody: {
+            role: 'reader',
+            type: 'anyone',
+          },
+          supportsAllDrives: true,
+        });
+      } catch (permErr) {}
 
       const directImageUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
       const fullPathStr = pathParts.join(' / ');
