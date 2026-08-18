@@ -10,10 +10,11 @@ export interface LiffProfile {
   statusMessage?: string;
 }
 
-let isInitialized = false;
-
 /**
  * Initialize LINE LIFF SDK
+ * - ถ้าอยู่ใน LINE App และยังไม่ได้ login → เรียก liff.login() อัตโนมัติ (redirect)
+ * - ถ้าอยู่ใน browser ปกติและยังไม่ได้ login → เรียก liff.login() เพื่อ OAuth flow
+ * - ถ้า login แล้ว → ดึง profile มาเลย
  */
 export async function initLiff(): Promise<{ success: boolean; profile?: LiffProfile; isInClient: boolean }> {
   if (typeof window === 'undefined') {
@@ -30,22 +31,28 @@ export async function initLiff(): Promise<{ success: boolean; profile?: LiffProf
 
     const isInClient = liff.isInClient();
 
-    if (liff.isLoggedIn()) {
-      try {
-        const profile = await liff.getProfile();
-        return {
-          success: true,
-          isInClient,
-          profile: {
-            userId: profile.userId,
-            displayName: profile.displayName,
-            pictureUrl: profile.pictureUrl,
-            statusMessage: profile.statusMessage,
-          },
-        };
-      } catch (profileErr) {
-        console.warn('Failed to get LIFF profile:', profileErr);
-      }
+    if (!liff.isLoggedIn()) {
+      // ยังไม่ได้ login → เรียก liff.login() เพื่อ redirect ไปให้ LINE auth
+      liff.login();
+      // return false เพราะจะ redirect ออกไป ไม่ต้อง render อะไร
+      return { success: false, isInClient };
+    }
+
+    // Login แล้ว → ดึงโปรไฟล์ LINE
+    try {
+      const profile = await liff.getProfile();
+      return {
+        success: true,
+        isInClient,
+        profile: {
+          userId: profile.userId,
+          displayName: profile.displayName,
+          pictureUrl: profile.pictureUrl,
+          statusMessage: profile.statusMessage,
+        },
+      };
+    } catch (profileErr) {
+      console.warn('Failed to get LIFF profile:', profileErr);
     }
 
     return { success: true, isInClient };
