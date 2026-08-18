@@ -184,6 +184,53 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       console.error('Failed to load local storage auth:', e);
     }
 
+    // Global Silent LIFF Handshake & Supabase Sync (Matching SUANKHANOM architecture)
+    import('@/lib/liff').then(({ initLiff }) => {
+      initLiff().then(async (res) => {
+        if (res && res.success && res.profile?.userId) {
+          const { supabase, isSupabaseConfigured } = await import('@/lib/supabase');
+          if (isSupabaseConfigured && supabase) {
+            try {
+              const { data: dbUser } = await supabase
+                .from('users')
+                .select('*')
+                .or(`line_user_id.eq.${res.profile.userId},id.eq.${res.profile.userId}`)
+                .maybeSingle();
+
+              const isAdmin = ['U203ff66b7e535c901dfbfa86d93eef46'].includes(res.profile.userId);
+
+              if (dbUser && dbUser.nickname) {
+                const effectiveRole = isAdmin ? 'ADMIN' : (dbUser.role || 'STUDENT');
+                const userObj: UserProfile = {
+                  id: dbUser.id,
+                  name: dbUser.name || res.profile.displayName,
+                  nickname: dbUser.nickname,
+                  studentId: dbUser.student_id || '',
+                  gradeRoom: dbUser.grade_room || '',
+                  phone: dbUser.phone || '',
+                  promptPayNumber: dbUser.promptpay_number || '',
+                  promptPayRefund: dbUser.promptpay_refund || dbUser.promptpay_number || '',
+                  role: effectiveRole,
+                  shopId: dbUser.shop_id,
+                  avatarUrl: res.profile.pictureUrl || dbUser.avatar_url,
+                  lineUserId: res.profile.userId,
+                  isActive: dbUser.is_active !== false,
+                  isLoggedIn: true,
+                };
+                setCurrentUser(userObj);
+                try {
+                  localStorage.setItem('sappha_auth_user', JSON.stringify(userObj));
+                  localStorage.setItem('sappha_is_logged_in', 'true');
+                } catch (e) {}
+              }
+            } catch (err) {
+              console.warn('Silent LIFF sync error:', err);
+            }
+          }
+        }
+      }).catch(() => {});
+    }).catch(() => {});
+
     // Load Live Data from Supabase Cloud
     import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
       if (isSupabaseConfigured && supabase) {
