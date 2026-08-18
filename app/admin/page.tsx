@@ -88,12 +88,12 @@ export default function AdminPortalPage() {
           คุณกำลังเข้าใช้งานในบทบาท &ldquo;{currentUser.name}&rdquo; ({currentUser.role})
         </p>
         <div className="pt-2 flex flex-col gap-2">
-          <button
-            onClick={() => switchRole('ADMIN')}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-2xl shadow-md transition-all"
+          <a
+            href="/"
+            className="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-2xl shadow-md transition-all flex items-center justify-center gap-1.5"
           >
-            สลับเป็นบทบาทผู้ดูแลระบบ (อาจารย์วิชัย)
-          </button>
+            <span>← กลับสู่ตลาดโรงอาหารหน้าหลัก</span>
+          </a>
         </div>
       </div>
     );
