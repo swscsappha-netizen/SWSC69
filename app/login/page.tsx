@@ -43,14 +43,18 @@ export default function LoginPage() {
   const runLiffInit = useCallback(() => {
     setLiffError(null);
 
-    // Timeout fallback: ถ้า 12 วิแล้วหน้ายัง loading อยู่ → แสดง error
-    const timeoutId = setTimeout(() => {
-      setLiffError('การเชื่อมต่อ LINE ใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง');
-    }, 12000);
+    // iOS LIFF fix: สร้าง Promise ที่ resolve หลัง 10 วินาทีเสมอ
+    // เพื่อ fallback กรณี iOS WebKit freeze Promise chain ไม่ให้ฟัง setTimeout ปกติ
+    const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000));
 
-    import('@/lib/liff').then(({ initLiff }) => {
-      initLiff().then((res) => {
-        clearTimeout(timeoutId);
+    const liffPromise = import('@/lib/liff').then(({ initLiff }) => initLiff());
+
+    Promise.race([liffPromise, timeoutPromise]).then((res) => {
+      // Timeout fired → res จะเป็น null
+      if (res === null) {
+        setLiffError('การเชื่อมต่อ LINE ใช้เวลานานเกินไป กรุณาปิดแล้วเปิดลิ้งก์ใหม่อีกครั้ง');
+        return;
+      }
 
         // ถ้า initLiff คืน error field = เกิด error จริงๆ (ไม่ใช่แค่ redirect)
         if (!res.success && res.error) {
@@ -138,13 +142,8 @@ export default function LoginPage() {
           // Login แล้วแต่ไม่มี profile (edge case) → แสดงฟอร์มโดยไม่มีรูป
           setLiffReady(true);
         }
-      }).catch((err: any) => {
-        clearTimeout(timeoutId);
-        setLiffError(err?.message || 'เชื่อมต่อ LINE ไม่สำเร็จ กรุณาลองใหม่');
-      });
     }).catch((err: any) => {
-      clearTimeout(timeoutId);
-      setLiffError(err?.message || 'โหลด LINE SDK ไม่สำเร็จ กรุณาลองใหม่');
+      setLiffError(err?.message || 'เชื่อมต่อ LINE ไม่สำเร็จ กรุณาลองใหม่');
     });
   }, [ADMIN_LINE_IDS, router, showToast, updateUserProfile]);
 
