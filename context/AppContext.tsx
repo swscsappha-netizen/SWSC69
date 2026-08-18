@@ -141,8 +141,57 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [reviews, setReviews] = useState<ShopReview[]>([]);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  // Load from Supabase Cloud on mount (100% Real Database)
+  // Load from Supabase Cloud on mount (100% Real Database) + Global LIFF Init
   useEffect(() => {
+    // 0. Global LIFF Handshake: ensures LINE in-app native overlay dismisses on ANY entry URL
+    import('@/lib/liff').then(({ initLiff }) => {
+      initLiff().then(async (res) => {
+        if (res && res.success && res.profile) {
+          const ADMIN_LINE_IDS = ['U203ff66b7e535c901dfbfa86d93eef46'];
+          const isLineAdmin = ADMIN_LINE_IDS.includes(res.profile.userId);
+
+          // Check if user already exists in Supabase
+          try {
+            const { supabase, isSupabaseConfigured } = await import('@/lib/supabase');
+            if (isSupabaseConfigured && supabase) {
+              const { data: existingUser } = await supabase
+                .from('users')
+                .select('*')
+                .or(`line_user_id.eq.${res.profile.userId},id.eq.${res.profile.userId}`)
+                .maybeSingle();
+
+              if (existingUser && existingUser.nickname) {
+                const effectiveRole = isLineAdmin ? 'ADMIN' : (existingUser.role || 'STUDENT');
+                const userProfile: UserProfile = {
+                  id: existingUser.id,
+                  name: existingUser.name || res.profile.displayName,
+                  nickname: existingUser.nickname,
+                  studentId: existingUser.student_id || '',
+                  gradeRoom: existingUser.grade_room || '',
+                  phone: existingUser.phone || '',
+                  promptPayNumber: existingUser.promptpay_number || '',
+                  promptPayRefund: existingUser.promptpay_refund || existingUser.promptpay_number || '',
+                  role: effectiveRole,
+                  shopId: existingUser.shop_id,
+                  avatarUrl: res.profile.pictureUrl || existingUser.avatar_url,
+                  lineUserId: res.profile.userId,
+                  isActive: existingUser.is_active !== false,
+                  isLoggedIn: true,
+                };
+                setCurrentUser(userProfile);
+                try {
+                  localStorage.setItem('sappha_auth_user', JSON.stringify(userProfile));
+                  localStorage.setItem('sappha_is_logged_in', 'true');
+                } catch (e) {}
+              }
+            }
+          } catch (err) {
+            console.warn('Error checking existing user in AppContext:', err);
+          }
+        }
+      }).catch(() => {});
+    }).catch(() => {});
+
     // Check saved session in localStorage
     try {
       const savedAuth = localStorage.getItem('sappha_auth_user');
