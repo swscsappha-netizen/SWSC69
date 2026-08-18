@@ -6,7 +6,7 @@ import { Sparkles, ShieldCheck, UserCheck, Phone, BookOpen, Hash } from 'lucide-
 import { findStudentById } from '@/lib/studentsLookup';
 
 export default function StudentOnboardingModal() {
-  const { currentUser, updateUserProfile, showToast } = useApp();
+  const { currentUser, isAuthReady, updateUserProfile, showToast } = useApp();
 
   const [open, setOpen] = useState(false);
   const [studentId, setStudentId] = useState('');
@@ -18,8 +18,13 @@ export default function StudentOnboardingModal() {
   const [submitting, setSubmitting] = useState(false);
 
   // Check if onboarding is needed
-  // Condition: User is logged in via LINE, but has not completed their 5-digit student ID yet
+  // Condition: Only check AFTER isAuthReady is true (100% finished syncing with Supabase)
   useEffect(() => {
+    if (!isAuthReady) {
+      setOpen(false);
+      return;
+    }
+
     const isMockOrEmptyId = !currentUser.studentId || 
       currentUser.studentId.length < 4 || 
       currentUser.studentId.startsWith('user_') || 
@@ -27,15 +32,19 @@ export default function StudentOnboardingModal() {
       currentUser.studentId === '45892';
 
     if (currentUser.isLoggedIn && isMockOrEmptyId) {
-      setOpen(true);
-      if (currentUser.name) setFullName(currentUser.name);
-      if (currentUser.nickname) setNickname(currentUser.nickname);
-      if (currentUser.phone) setPhone(currentUser.phone);
-      if (currentUser.gradeRoom) setGradeRoom(currentUser.gradeRoom);
+      // Smooth 200ms delay so loading screen fades out first before popup slides in
+      const timer = setTimeout(() => {
+        setOpen(true);
+        if (currentUser.name) setFullName(currentUser.name);
+        if (currentUser.nickname) setNickname(currentUser.nickname);
+        if (currentUser.phone) setPhone(currentUser.phone);
+        if (currentUser.gradeRoom) setGradeRoom(currentUser.gradeRoom);
+      }, 200);
+      return () => clearTimeout(timer);
     } else {
       setOpen(false);
     }
-  }, [currentUser.isLoggedIn, currentUser.studentId, currentUser.role]);
+  }, [currentUser.isLoggedIn, currentUser.studentId, currentUser.role, isAuthReady]);
 
   if (!open) return null;
 

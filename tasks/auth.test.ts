@@ -67,11 +67,17 @@ describe('2. LINE Receipt Flex Message Generation Tests', () => {
 describe('3. LoadingAuthScreen & Seamless Auth Guard Tests', () => {
   const ADMIN_LINE_IDS = ['U203ff66b7e535c901dfbfa86d93eef46'];
 
-  function resolveAuthViewState(isLoggedIn: boolean): { showLoadingScreen: boolean; showMainApp: boolean } {
-    if (!isLoggedIn) {
+  function resolveAuthViewState(isLoggedIn: boolean, isAuthReady: boolean): { showLoadingScreen: boolean; showMainApp: boolean } {
+    if (!isLoggedIn || !isAuthReady) {
       return { showLoadingScreen: true, showMainApp: false };
     }
     return { showLoadingScreen: false, showMainApp: true };
+  }
+
+  function shouldShowOnboardingModal(isLoggedIn: boolean, isAuthReady: boolean, studentId?: string): boolean {
+    if (!isAuthReady || !isLoggedIn) return false;
+    const isMockOrEmptyId = !studentId || studentId.length < 4 || studentId.startsWith('user_') || studentId === 'ADMIN-01' || studentId === '45892';
+    return isMockOrEmptyId;
   }
 
   function resolveEffectiveRole(lineUserId?: string, selectedRole: string = 'STUDENT'): string {
@@ -81,16 +87,29 @@ describe('3. LoadingAuthScreen & Seamless Auth Guard Tests', () => {
     return selectedRole;
   }
 
-  it('should render LoadingAuthScreen when user is not authenticated yet', () => {
-    const view = resolveAuthViewState(false);
-    assert.strictEqual(view.showLoadingScreen, true);
-    assert.strictEqual(view.showMainApp, false);
+  it('should render LoadingAuthScreen when user is not authenticated yet or sync in progress', () => {
+    const view1 = resolveAuthViewState(false, false);
+    assert.strictEqual(view1.showLoadingScreen, true);
+
+    const view2 = resolveAuthViewState(true, false);
+    assert.strictEqual(view2.showLoadingScreen, true);
   });
 
-  it('should reveal main app when user is authenticated (isLoggedIn: true)', () => {
-    const view = resolveAuthViewState(true);
+  it('should reveal main app only when user is authenticated and isAuthReady is true', () => {
+    const view = resolveAuthViewState(true, true);
     assert.strictEqual(view.showLoadingScreen, false);
     assert.strictEqual(view.showMainApp, true);
+  });
+
+  it('should NEVER flash onboarding modal for returning student while isAuthReady is false or when studentId exists', () => {
+    // While loading:
+    assert.strictEqual(shouldShowOnboardingModal(true, false, ''), false);
+    // When finished loading and user has student ID:
+    assert.strictEqual(shouldShowOnboardingModal(true, true, '34890'), false);
+  });
+
+  it('should show onboarding modal smoothly for new user only after isAuthReady is true', () => {
+    assert.strictEqual(shouldShowOnboardingModal(true, true, ''), true);
   });
 
   it('should automatically assign ADMIN role for authorized LINE Admin User ID', () => {

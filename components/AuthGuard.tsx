@@ -5,13 +5,13 @@ import { useApp } from '@/context/AppContext';
 import LoadingAuthScreen from '@/components/LoadingAuthScreen';
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { currentUser } = useApp();
+  const { currentUser, isAuthReady } = useApp();
 
-  // If user is not authenticated yet (handshake in progress), show premium Loading Screen
-  if (!currentUser.isLoggedIn) {
+  // If user is not authenticated yet or auth sync is in progress (min 1.5s), show Loading Screen
+  if (!currentUser.isLoggedIn || !isAuthReady) {
     return <LoadingAuthScreen />;
   }
 
-  // Once authenticated, render full application with Navbar, Market, and BottomNav
+  // Once authenticated and fully synced, render full application with Navbar and Market
   return <>{children}</>;
 }

@@ -30,6 +30,7 @@ interface Toast {
 
 interface AppContextType {
   currentUser: UserProfile;
+  isAuthReady: boolean;
   switchRole: (role: UserRole) => void;
   updateUserProfile: (profile: Partial<UserProfile>) => void;
   logout: () => void;
@@ -153,6 +154,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return initialUserProfile;
   });
 
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [shops, setShops] = useState<Shop[]>([]);
@@ -168,6 +170,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Load from Supabase Cloud on mount (100% Real Database)
   useEffect(() => {
+    const startSyncTime = Date.now();
+    const finishAuthReady = () => {
+      const elapsed = Date.now() - startSyncTime;
+      const minDisplayDuration = 1500; // 1.5 seconds minimum for smooth, high-end feel
+      const waitTime = Math.max(0, minDisplayDuration - elapsed);
+      setTimeout(() => {
+        setIsAuthReady(true);
+      }, waitTime);
+    };
+
     // Check saved session in localStorage
     try {
       const savedAuth = localStorage.getItem('sappha_auth_user');
@@ -261,8 +273,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             }
           }
         }
-      }).catch(() => {});
-    }).catch(() => {});
+        finishAuthReady();
+      }).catch(() => {
+        finishAuthReady();
+      });
+    }).catch(() => {
+      finishAuthReady();
+    });
 
     // Load Live Data from Supabase Cloud
     import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
@@ -1769,6 +1786,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider
       value={{
         currentUser,
+        isAuthReady,
         switchRole,
         updateUserProfile,
         logout,
