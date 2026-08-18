@@ -71,16 +71,10 @@ export async function loginWithLiff(): Promise<void> {
     }
 
     if (!liff.isLoggedIn()) {
-      liff.login({
-        redirectUri: window.location.origin + '/login',
-      });
+      liff.login();
     }
   } catch (error) {
     console.error('LIFF login error:', error);
-    // Fallback direct LINE OAuth URL if SDK fails
-    const redirectUri = encodeURIComponent(window.location.origin + '/login');
-    const clientId = liffId.split('-')[0] || liffId;
-    window.location.href = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=profile%20openid&state=sappha_${Date.now()}`;
   }
 }
 
