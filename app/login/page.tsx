@@ -50,7 +50,7 @@ export default function LoginPage() {
   const [promptPay, setPromptPay] = useState('');
 
   React.useEffect(() => {
-    import('@/lib/liff').then(({ initLiff }) => {
+    import('@/lib/liff').then(({ initLiff, loginWithLiff }) => {
       initLiff().then((res) => {
         if (res.success && res.profile) {
           const isLineAdmin = ADMIN_LINE_IDS.includes(res.profile.userId);
@@ -79,11 +79,14 @@ export default function LoginPage() {
               isLoggedIn: true,
             });
             showToast('success', 'ยินดีต้อนรับผู้ดูแลระบบ! 🛡️', `เข้าสู่ระบบในฐานะ Admin (${res.profile.displayName})`);
-            router.push('/admin');
+            router.replace('/admin');
             return;
           }
 
           setStep('ONBOARDING');
+        } else {
+          // Zero-Click Auto LINE Login
+          loginWithLiff();
         }
       });
     }).catch(() => {});
@@ -97,7 +100,6 @@ export default function LoginPage() {
       setStep('ONBOARDING');
       setLoading(false);
     } else {
-      // Direct Real LINE Login OAuth redirect
       loginWithLiff();
     }
   };
@@ -148,11 +150,11 @@ export default function LoginPage() {
       setLoading(false);
       if (effectiveRole === 'ADMIN') {
         showToast('success', 'เข้าสู่ระบบแอดมินสำเร็จ! 🛡️', 'ยินดีต้อนรับผู้ดูแลระบบโรงเรียน');
-        router.push('/admin');
+        router.replace('/admin');
       } else {
         const greeting = selectedRole === 'TEACHER' ? `สวัสดีครับคุณครู ${nickname}` : `สวัสดีครับน้อง ${nickname} (${gradeRoom})`;
         showToast('success', 'ลงทะเบียนเข้าสู่ระบบสำเร็จ! 🎉', greeting);
-        router.push('/');
+        router.replace('/');
       }
     }, 600);
   };
@@ -163,7 +165,7 @@ export default function LoginPage() {
         
         {/* Header Hero */}
         <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-8 text-center text-white relative">
-          <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-tr from-brand-500 to-amber-400 text-white flex items-center justify-center font-black text-2xl shadow-lg mb-3">
+          <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-tr from-brand-500 to-amber-400 text-white flex items-center justify-center font-black text-2xl shadow-lg mb-3 animate-pulse">
             SW
           </div>
           <h1 className="text-2xl font-black tracking-tight text-white">
@@ -174,36 +176,28 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Step 1: Initial Login with LINE */}
+        {/* Step 1: Initial Auto-Login Screen */}
         {step === 'LOGIN' && (
-          <div className="p-6 sm:p-8 space-y-6">
-            <div className="text-center space-y-1">
+          <div className="p-8 text-center space-y-6">
+            <div className="flex justify-center">
+              <div className="w-12 h-12 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
+            </div>
+            <div className="space-y-1">
               <h2 className="font-extrabold text-base text-slate-900">
-                เข้าสู่ระบบสำหรับนักเรียนและครู
+                กำลังเชื่อมต่อบัญชี LINE...
               </h2>
               <p className="text-xs text-slate-500">
-                เข้าใช้งานสะดวกรวดเร็ว ปลอดภัยด้วยบัญชี LINE
+                ระบบกำลังเข้าสู่ระบบให้อัตโนมัติ กรุณารอสักครู่
               </p>
             </div>
 
-            {/* LINE Login Button */}
+            {/* Fallback button if auto-redirect is blocked */}
             <button
               onClick={handleLineLogin}
-              disabled={loading}
-              className="w-full py-4 px-6 bg-[#06C755] hover:bg-[#05b34c] active:scale-95 text-white font-extrabold text-sm rounded-2xl shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-3 group"
+              className="py-2.5 px-4 bg-[#06C755] hover:bg-[#05b34c] text-white text-xs font-bold rounded-xl transition inline-flex items-center gap-2 shadow-sm"
             >
-              {/* LINE Icon SVG */}
-              <svg className="w-6 h-6 fill-white" viewBox="0 0 24 24">
-                <path d="M24 10.304c0-5.369-5.383-9.738-12-9.738-6.616 0-12 4.369-12 9.738 0 4.814 4.269 8.846 10.019 9.587.39.085.922.26 1.057.595.121.302.079.774.039 1.08l-.168 1.014c-.052.308-.242 1.205 1.056.657 1.298-.548 7.009-4.128 9.563-7.067 1.62-1.745 2.434-3.535 2.434-5.866z"/>
-              </svg>
-              <span>{loading ? 'กำลังเชื่อมต่อ LINE...' : 'เข้าสู่ระบบด้วย LINE (LINE Login)'}</span>
+              <span>หากไม่เปลี่ยนหน้า กดเข้าสู่ระบบที่นี่</span>
             </button>
-
-            <div className="text-center pt-2">
-              <p className="text-[11px] text-slate-400">
-                ระบบสั่งอาหารล่วงหน้า สำหรับนักเรียน ครู และบุคลากร ส.ว.
-              </p>
-            </div>
           </div>
         )}
 
