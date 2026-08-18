@@ -38,7 +38,12 @@ export default function SlipModal({ order, onClose }: SlipModalProps) {
     const file = e.target.files?.[0];
     if (file) {
       const { uploadImage } = await import('@/lib/uploadHelper');
-      const res = await uploadImage(file, `refund_${order.id}_${Date.now()}.jpg`);
+      const timestamp = Date.now().toString().slice(-6);
+      const res = await uploadImage(file, `refund_${order.orderCode}_${timestamp}.jpg`, {
+        shopName: order.shopName || 'ร้านค้าโรงอาหาร',
+        category: 'สลิปคืนเงิน',
+        includeDate: true,
+      });
       setRefundSlipPreview(res.fileUrl);
     }
   };

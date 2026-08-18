@@ -4,7 +4,7 @@ import { uploadImageToGoogleDrive, isGoogleDriveConfigured } from '@/lib/googleD
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { base64Data, fileName } = body;
+    const { base64Data, fileName, shopName, category, includeDate } = body;
 
     if (!base64Data) {
       return NextResponse.json(
@@ -13,10 +13,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const safeFileName = fileName || `slip_${Date.now()}.jpg`;
+    const safeFileName = fileName || `file_${Date.now()}.jpg`;
 
     if (isGoogleDriveConfigured) {
-      const result = await uploadImageToGoogleDrive(base64Data, safeFileName);
+      const result = await uploadImageToGoogleDrive(base64Data, safeFileName, {
+        shopName,
+        category,
+        includeDate,
+      });
       return NextResponse.json(result);
     } else {
       // Graceful fallback to data url

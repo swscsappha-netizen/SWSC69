@@ -23,7 +23,8 @@ interface MenuFormProps {
 
 export default function MenuForm({ initialProduct, shopId, mode }: MenuFormProps) {
   const router = useRouter();
-  const { addProduct, updateProduct } = useApp();
+  const { addProduct, updateProduct, shops } = useApp();
+  const currentShop = shops.find((s) => s.id === shopId);
 
   const [name, setName] = useState(initialProduct?.name || '');
   const [description, setDescription] = useState(initialProduct?.description || '');
@@ -242,7 +243,12 @@ export default function MenuForm({ initialProduct, shopId, mode }: MenuFormProps
                       const file = e.target.files?.[0];
                       if (file) {
                         const { uploadImage } = await import('@/lib/uploadHelper');
-                        const res = await uploadImage(file, `menu_${Date.now()}.jpg`);
+                        const timestamp = Date.now().toString().slice(-6);
+                        const res = await uploadImage(file, `menu_${timestamp}.jpg`, {
+                          shopName: currentShop?.name || 'ร้านค้าโรงอาหาร',
+                          category: 'รูปเมนูอาหาร',
+                          includeDate: false,
+                        });
                         setImageUrl(res.fileUrl);
                       }
                     }}

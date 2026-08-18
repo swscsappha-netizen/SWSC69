@@ -83,9 +83,16 @@ export default function CheckoutPage() {
   const handleSlipUpload = async (shopId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      showToast('info', 'กำลังอัปโหลดสลิป...', 'กำลังประมวลผลและส่งรูปภาพเข้าสู่ไดรฟ์');
+      const targetShop = shops.find((s) => s.id === shopId);
+      const shopName = targetShop?.name || 'ร้านค้าโรงอาหาร';
+      showToast('info', 'กำลังอัปโหลดสลิป...', `กำลังส่งสลิปไปยัง Google Drive: ${shopName}`);
       const { uploadImage } = await import('@/lib/uploadHelper');
-      const res = await uploadImage(file, `slip_${shopId}_${Date.now()}.jpg`);
+      const timestamp = Date.now().toString().slice(-6);
+      const res = await uploadImage(file, `slip_${shopId.slice(0, 8)}_${timestamp}.jpg`, {
+        shopName,
+        category: 'สลิปชำระเงิน',
+        includeDate: true,
+      });
       setSlips((prev) => ({
         ...prev,
         [shopId]: res.fileUrl,

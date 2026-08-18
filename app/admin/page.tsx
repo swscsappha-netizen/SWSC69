@@ -1543,11 +1543,17 @@ export default function AdminPortalPage() {
                     const res = await fetch('/api/drive/upload', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ base64Data: testBase64, fileName: `test_ping_${Date.now()}.png` }),
+                      body: JSON.stringify({
+                        base64Data: testBase64,
+                        fileName: `test_ping_${Date.now().toString().slice(-6)}.png`,
+                        shopName: 'ส่วนกลางโรงเรียน',
+                        category: 'ทดสอบระบบ',
+                        includeDate: false,
+                      }),
                     });
                     const data = await res.json();
                     if (data.fileId) {
-                      showToast('success', 'Google Drive พร้อมใช้งาน! 📁', `อัปโหลดเข้าโฟลเดอร์สำเร็จ (File ID: ${data.fileId.slice(0, 8)}...)`);
+                      showToast('success', 'Google Drive พร้อมใช้งาน! 📁', `อัปโหลดสำเร็จ: ${data.folderPath || 'ส่วนกลางโรงเรียน / ทดสอบระบบ'}`);
                     } else {
                       showToast('info', 'สถานะ Google Drive', data.message || 'ระบบพร้อมรับรูปภาพ (Fallback Mode)');
                     }

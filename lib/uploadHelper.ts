@@ -1,10 +1,16 @@
 /**
  * Helper to upload image (File or Base64) to Google Drive via /api/drive/upload
+ * Supports nested subfolders: Root ➜ [Shop Name] ➜ [Category] ➜ [YYYY-MM-DD]
  */
 export async function uploadImage(
   fileOrBase64: File | string,
-  fileName?: string
-): Promise<{ success: boolean; fileUrl: string; message: string }> {
+  fileName?: string,
+  options?: {
+    shopName?: string;
+    category?: 'สลิปชำระเงิน' | 'สลิปคืนเงิน' | 'รูปเมนูอาหาร' | 'สลิปค่าแรกเข้า' | 'ทดสอบระบบ' | string;
+    includeDate?: boolean;
+  }
+): Promise<{ success: boolean; fileUrl: string; folderPath?: string; message: string }> {
   try {
     let base64Data = '';
     let name = fileName || `img_${Date.now()}.jpg`;
@@ -29,6 +35,9 @@ export async function uploadImage(
       body: JSON.stringify({
         base64Data,
         fileName: name,
+        shopName: options?.shopName,
+        category: options?.category,
+        includeDate: options?.includeDate,
       }),
     });
 
@@ -40,6 +49,7 @@ export async function uploadImage(
     return {
       success: data.success !== false,
       fileUrl: data.fileUrl || base64Data,
+      folderPath: data.folderPath,
       message: data.message || 'อัปโหลดภาพสำเร็จ',
     };
   } catch (error: any) {

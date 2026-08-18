@@ -47,9 +47,14 @@ export default function MerchantRegisterPage() {
   const handleSlipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      showToast('info', 'กำลังอัปโหลดสลิป...', 'กำลังส่งรูปภาพเข้าสู่ไดรฟ์');
+      showToast('info', 'กำลังอัปโหลดสลิป...', 'กำลังส่งรูปภาพเข้าสู่ไดรฟ์ส่วนกลาง');
       const { uploadImage } = await import('@/lib/uploadHelper');
-      const res = await uploadImage(file, `fee_reg_${Date.now()}.jpg`);
+      const timestamp = Date.now().toString().slice(-6);
+      const res = await uploadImage(file, `fee_reg_${timestamp}.jpg`, {
+        shopName: 'ส่วนกลางโรงเรียน',
+        category: 'สลิปค่าแรกเข้า',
+        includeDate: true,
+      });
       setFeeSlip(res.fileUrl);
       showToast('success', 'แนบสลิปแล้ว 📄', res.message);
     }
