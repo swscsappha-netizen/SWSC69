@@ -1495,32 +1495,32 @@ export default function AdminPortalPage() {
 
           {/* Cloud Database (Supabase) Sync Section */}
           <div className="pt-6 border-t border-slate-100 space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h4 className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
                   <Database className="w-4 h-4 text-emerald-600" />
-                  <span>ฐานข้อมูลคลาวด์ (Supabase Cloud Database)</span>
+                  <span>ฐานข้อมูลคลาวด์จริง (Supabase Cloud Database)</span>
                 </h4>
                 <p className="text-[11px] text-slate-500">
-                  สถานะการเชื่อมต่อ: <strong className="text-emerald-600">เชื่อมต่อแล้ว 🟢 (difbkxcxwlrnrbwfkbva.supabase.co)</strong>
+                  สถานะการเชื่อมต่อ: <strong className="text-emerald-600">เชื่อมต่อเรียลไทม์ 100% 🟢 (difbkxcxwlrnrbwfkbva.supabase.co)</strong>
                 </p>
               </div>
               <button
                 type="button"
                 onClick={async () => {
-                  const { seedInitialDataToSupabase } = await import('@/lib/supabaseSync');
-                  showToast('info', 'กำลังซิงค์ข้อมูล...', 'กำลังนำเข้าข้อมูลร้านค้า เมนู และล็อกโรงอาหารเข้าสู่ Supabase');
-                  const res = await seedInitialDataToSupabase();
+                  const { checkSupabaseConnection } = await import('@/lib/supabaseSync');
+                  showToast('info', 'กำลังตรวจสอบ...', 'กำลังทดสอบการเชื่อมต่อกับ Supabase Cloud');
+                  const res = await checkSupabaseConnection();
                   if (res.success) {
-                    showToast('success', 'ซิงค์ข้อมูลสำเร็จ! ⚡', res.message);
+                    showToast('success', 'เชื่อมต่อสำเร็จ! ⚡', res.message);
                   } else {
-                    showToast('error', 'ซิงค์ข้อมูลไม่สำเร็จ', res.message);
+                    showToast('error', 'การเชื่อมต่อขัดข้อง', res.message);
                   }
                 }}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5"
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5 self-start sm:self-auto"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>นำเข้าข้อมูลเริ่มต้นสู่ Supabase (Seed Data)</span>
+                <span>ทดสอบการเชื่อมต่อ Supabase</span>
               </button>
             </div>
           </div>

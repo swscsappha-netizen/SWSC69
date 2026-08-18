@@ -101,11 +101,43 @@ export default function HomePage() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {filteredShops.map((shop) => (
-            <ShopCard key={shop.id} shop={shop} products={products} />
-          ))}
-        </div>
+        {filteredShops.length === 0 ? (
+          <div className="p-8 sm:p-12 text-center bg-white rounded-3xl border border-slate-200 shadow-sm space-y-3">
+            <div className="w-16 h-16 mx-auto rounded-3xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-2xl shadow-sm">
+              🍱
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-extrabold text-base text-slate-800">
+                ยังไม่มีร้านค้าเปิดรับออเดอร์ในขณะนี้
+              </h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                เมื่อแม่ค้าในโรงอาหารเปิดร้านและเพิ่มเมนู รายการอาหารและร้านค้าจะปรากฏที่นี่แบบเรียลไทม์
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <a
+                href="/merchant/register"
+                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-2xl shadow-md transition-all inline-flex items-center gap-2"
+              >
+                <span>+ ยื่นขอเปิดร้านค้าใหม่ 🏪</span>
+              </a>
+              {currentUser.role === 'ADMIN' && (
+                <a
+                  href="/admin"
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-2xl shadow-md transition-all inline-flex items-center gap-2"
+                >
+                  <span>จัดการร้านค้าในระบบ (แอดมิน) 🛡️</span>
+                </a>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {filteredShops.map((shop) => (
+              <ShopCard key={shop.id} shop={shop} products={products} />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Section 2: Popular & Available Menus (เมนูอาหารพร้อมสั่ง) */}

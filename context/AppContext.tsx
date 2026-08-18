@@ -18,17 +18,7 @@ import {
 } from '@/types';
 import {
   initialUserProfile,
-  mockUsers,
-  initialUsers,
   initialSystemSettings,
-  initialShops,
-  initialProducts,
-  initialStalls,
-  initialHolidays,
-  initialAnnouncements,
-  initialOrders,
-  initialFeeRecords,
-  initialReviews,
 } from '@/lib/mockData';
 
 interface Toast {
@@ -139,66 +129,49 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<UserProfile>(initialUserProfile);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [orders, setOrders] = useState<Order[]>(initialOrders);
-  const [shops, setShops] = useState<Shop[]>(initialShops);
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [stalls, setStalls] = useState<StallLocation[]>(initialStalls);
-  const [holidays, setHolidays] = useState<SchoolHoliday[]>(initialHolidays);
-  const [announcements, setAnnouncements] = useState<Announcement[]>(initialAnnouncements);
-  const [feeRecords, setFeeRecords] = useState<MerchantFeeRecord[]>(initialFeeRecords);
-  const [users, setUsers] = useState<UserProfile[]>(initialUsers);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [stalls, setStalls] = useState<StallLocation[]>([]);
+  const [holidays, setHolidays] = useState<SchoolHoliday[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [feeRecords, setFeeRecords] = useState<MerchantFeeRecord[]>([]);
+  const [users, setUsers] = useState<UserProfile[]>([]);
   const [systemSettings, setSystemSettings] = useState<SystemSettings>(initialSystemSettings);
-  const [reviews, setReviews] = useState<ShopReview[]>(initialReviews);
+  const [reviews, setReviews] = useState<ShopReview[]>([]);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  // Load from localStorage if available
+  // Load from Supabase Cloud on mount (100% Real Database)
   useEffect(() => {
+    // Check saved session in localStorage
     try {
-      const savedOrders = localStorage.getItem('sappha_orders');
-      if (savedOrders) setOrders(JSON.parse(savedOrders));
-
-      const savedCart = localStorage.getItem('sappha_cart');
-      if (savedCart) setCart(JSON.parse(savedCart));
-
-      const savedShops = localStorage.getItem('sappha_shops');
-      if (savedShops) setShops(JSON.parse(savedShops));
-
-      const savedStalls = localStorage.getItem('sappha_stalls');
-      if (savedStalls) setStalls(JSON.parse(savedStalls));
-
-      const savedProducts = localStorage.getItem('sappha_products');
-      if (savedProducts) setProducts(JSON.parse(savedProducts));
-
-      const savedUsers = localStorage.getItem('sappha_users');
-      if (savedUsers) setUsers(JSON.parse(savedUsers));
-
-      const savedSettings = localStorage.getItem('sappha_settings');
-      if (savedSettings) setSystemSettings(JSON.parse(savedSettings));
-
-      const savedReviews = localStorage.getItem('sappha_reviews');
-      if (savedReviews) setReviews(JSON.parse(savedReviews));
-
       const savedAuth = localStorage.getItem('sappha_auth_user');
       const savedLoggedIn = localStorage.getItem('sappha_is_logged_in') === 'true';
       if (savedAuth && savedLoggedIn) {
-        setCurrentUser(JSON.parse(savedAuth));
+        const parsed = JSON.parse(savedAuth);
+        // Only load if not a legacy mock user
+        if (parsed && parsed.id && !parsed.id.startsWith('user_student_') && !parsed.id.startsWith('user_teacher_')) {
+          setCurrentUser(parsed);
+        } else if (parsed && parsed.lineUserId) {
+          setCurrentUser(parsed);
+        }
       }
     } catch (e) {
-      console.error('Failed to load local storage:', e);
+      console.error('Failed to load local storage auth:', e);
     }
 
     // Load Live Data from Supabase Cloud
     import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
       if (isSupabaseConfigured && supabase) {
         // 1. Fetch Shops
-        supabase.from('shops').select('*').then(({ data }) => {
-          if (data && data.length > 0) {
+        supabase.from('shops').select('*').order('created_at', { ascending: true }).then(({ data }) => {
+          if (data) {
             setShops(
               data.map((s: any) => ({
                 id: s.id,
                 name: s.name,
                 ownerName: s.owner_name,
-                stallId: s.stall_id || 'stall_1',
+                stallId: s.stall_id || '',
                 stallName: s.stall_name,
                 description: s.description || '',
                 imageUrl: s.image_url,
@@ -210,7 +183,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 isOpen: s.is_open,
                 isApproved: s.is_approved,
                 registrationFeePaid: s.registration_fee_paid,
-                subscriptionExpiresAt: s.subscription_expires_at || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                subscriptionExpiresAt: s.subscription_expires_at,
                 rating: Number(s.rating) || 5.0,
                 totalOrdersCount: Number(s.total_orders_count) || 0,
               }))
@@ -219,8 +192,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         });
 
         // 2. Fetch Products
-        supabase.from('products').select('*').then(({ data }) => {
-          if (data && data.length > 0) {
+        supabase.from('products').select('*').order('created_at', { ascending: true }).then(({ data }) => {
+          if (data) {
             setProducts(
               data.map((p: any) => ({
                 id: p.id,
@@ -240,8 +213,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         });
 
         // 3. Fetch Stalls
-        supabase.from('stalls').select('*').then(({ data }) => {
-          if (data && data.length > 0) {
+        supabase.from('stalls').select('*').order('code', { ascending: true }).then(({ data }) => {
+          if (data) {
             setStalls(
               data.map((st: any) => ({
                 id: st.id,
@@ -255,7 +228,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         // 4. Fetch Orders
         supabase.from('orders').select('*').order('created_at', { ascending: false }).then(({ data }) => {
-          if (data && data.length > 0) {
+          if (data) {
             setOrders(
               data.map((o: any) => ({
                 id: o.id,
@@ -287,7 +260,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         // 5. Fetch Reviews
         supabase.from('reviews').select('*').order('created_at', { ascending: false }).then(({ data }) => {
-          if (data && data.length > 0) {
+          if (data) {
             setReviews(
               data.map((r: any) => ({
                 id: r.id,
@@ -306,9 +279,96 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           }
         });
 
-        // Realtime Subscription on orders and reviews
+        // 6. Fetch Announcements
+        supabase.from('announcements').select('*').order('created_at', { ascending: false }).then(({ data }) => {
+          if (data) {
+            setAnnouncements(
+              data.map((a: any) => ({
+                id: a.id,
+                title: a.title,
+                subtitle: a.subtitle,
+                content: a.content,
+                imageUrl: a.image_url,
+                badgeText: a.badge_text,
+                isActive: a.is_active,
+              }))
+            );
+          }
+        });
+
+        // 7. Fetch Holidays
+        supabase.from('school_holidays').select('*').order('date', { ascending: true }).then(({ data }) => {
+          if (data) {
+            setHolidays(
+              data.map((h: any) => ({
+                id: h.id,
+                date: h.date,
+                name: h.name,
+                isLocked: h.is_locked,
+              }))
+            );
+          }
+        });
+
+        // 8. Fetch System Settings
+        supabase.from('system_settings').select('*').eq('id', 1).single().then(({ data }) => {
+          if (data) {
+            setSystemSettings({
+              schoolName: data.school_name || 'โรงเรียนสรรพวิทยาคม (SorWor)',
+              orderOpenTime: data.order_open_time || '06:00',
+              orderCutoffTime: data.order_cutoff_time || '20:00',
+              pickupTimeWindow: data.pickup_time_window || '06:45 - 07:45 น.',
+              maintenanceMode: Boolean(data.maintenance_mode),
+              emergencyBroadcast: data.emergency_broadcast || '',
+            });
+          }
+        });
+
+        // 9. Fetch Fee Records
+        supabase.from('merchant_fee_records').select('*').order('paid_at', { ascending: false }).then(({ data }) => {
+          if (data) {
+            setFeeRecords(
+              data.map((f: any) => ({
+                id: f.id,
+                shopId: f.shop_id,
+                shopName: f.shop_name,
+                type: f.type,
+                amount: Number(f.amount),
+                paidAt: f.paid_at,
+                validUntil: f.valid_until,
+                note: f.note,
+              }))
+            );
+          }
+        });
+
+        // 10. Fetch Users (for admin)
+        supabase.from('users').select('*').order('created_at', { ascending: false }).then(({ data }) => {
+          if (data) {
+            setUsers(
+              data.map((u: any) => ({
+                id: u.id,
+                name: u.name,
+                nickname: u.nickname || '',
+                studentId: u.student_id || '',
+                gradeRoom: u.grade_room || '',
+                phone: u.phone || '',
+                promptPayNumber: u.promptpay_number || '',
+                promptPayRefund: u.promptpay_refund || '',
+                role: u.role || 'STUDENT',
+                shopId: u.shop_id,
+                avatarUrl: u.avatar_url,
+                isActive: u.is_active,
+                lineUserId: u.line_user_id,
+                joinedAt: u.created_at,
+              }))
+            );
+          }
+        });
+
+        // Realtime Subscription on orders, reviews, shops, products
         const channel = supabase
-          .channel('schema-db-changes')
+          .channel('realtime-db-sync')
           .on(
             'postgres_changes',
             { event: '*', schema: 'public', table: 'orders' },
@@ -355,6 +415,117 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                       : o
                   )
                 );
+              } else if (payload.eventType === 'DELETE') {
+                const oldO: any = payload.old;
+                setOrders((prev) => prev.filter((o) => o.id !== oldO.id));
+              }
+            }
+          )
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'shops' },
+            (payload) => {
+              if (payload.eventType === 'INSERT') {
+                const newS: any = payload.new;
+                setShops((prev) => [
+                  {
+                    id: newS.id,
+                    name: newS.name,
+                    ownerName: newS.owner_name,
+                    stallId: newS.stall_id || '',
+                    stallName: newS.stall_name,
+                    description: newS.description || '',
+                    imageUrl: newS.image_url,
+                    bannerUrl: newS.banner_url,
+                    phone: newS.phone,
+                    promptPayNo: newS.promptpay_no,
+                    promptPayName: newS.owner_name,
+                    cutoffTime: newS.cutoff_time || '20:00',
+                    isOpen: newS.is_open,
+                    isApproved: newS.is_approved,
+                    registrationFeePaid: newS.registration_fee_paid,
+                    subscriptionExpiresAt: newS.subscription_expires_at,
+                    rating: Number(newS.rating) || 5.0,
+                    totalOrdersCount: Number(newS.total_orders_count) || 0,
+                  },
+                  ...prev.filter((s) => s.id !== newS.id),
+                ]);
+              } else if (payload.eventType === 'UPDATE') {
+                const updatedS: any = payload.new;
+                setShops((prev) =>
+                  prev.map((s) =>
+                    s.id === updatedS.id
+                      ? {
+                          ...s,
+                          name: updatedS.name,
+                          ownerName: updatedS.owner_name,
+                          stallName: updatedS.stall_name,
+                          description: updatedS.description || '',
+                          imageUrl: updatedS.image_url,
+                          bannerUrl: updatedS.banner_url,
+                          phone: updatedS.phone,
+                          promptPayNo: updatedS.promptpay_no,
+                          cutoffTime: updatedS.cutoff_time || '20:00',
+                          isOpen: updatedS.is_open,
+                          isApproved: updatedS.is_approved,
+                          registrationFeePaid: updatedS.registration_fee_paid,
+                          subscriptionExpiresAt: updatedS.subscription_expires_at,
+                          rating: Number(updatedS.rating) || 5.0,
+                        }
+                      : s
+                  )
+                );
+              } else if (payload.eventType === 'DELETE') {
+                const oldS: any = payload.old;
+                setShops((prev) => prev.filter((s) => s.id !== oldS.id));
+              }
+            }
+          )
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'products' },
+            (payload) => {
+              if (payload.eventType === 'INSERT') {
+                const newP: any = payload.new;
+                setProducts((prev) => [
+                  {
+                    id: newP.id,
+                    shopId: newP.shop_id,
+                    name: newP.name,
+                    description: newP.description,
+                    basePrice: Number(newP.base_price),
+                    imageUrl: newP.image_url,
+                    category: newP.category,
+                    dailyQuota: newP.daily_quota,
+                    quotaRemaining: newP.quota_remaining,
+                    isAvailable: newP.is_available,
+                    optionGroups: Array.isArray(newP.option_groups) ? newP.option_groups : [],
+                  },
+                  ...prev.filter((p) => p.id !== newP.id),
+                ]);
+              } else if (payload.eventType === 'UPDATE') {
+                const updatedP: any = payload.new;
+                setProducts((prev) =>
+                  prev.map((p) =>
+                    p.id === updatedP.id
+                      ? {
+                          ...p,
+                          name: updatedP.name,
+                          description: updatedP.description,
+                          basePrice: Number(updatedP.base_price),
+                          imageUrl: updatedP.image_url,
+                          category: updatedP.category,
+                          dailyQuota: updatedP.daily_quota,
+                          quotaRemaining: updatedP.quota_remaining,
+                          isAvailable: updatedP.is_available,
+                          optionGroups: Array.isArray(updatedP.option_groups) ? updatedP.option_groups : [],
+                        }
+                      : p
+                  )
+                );
+              } else if (payload.eventType === 'DELETE') {
+                const oldP: any = payload.old;
+                setProducts((prev) => prev.filter((p) => p.id !== oldP.id));
               }
             }
           )
@@ -365,73 +536,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         };
       }
     }).catch(() => {});
-
-    // Auto initialize LINE LIFF if in LINE Browser or LIFF configured
-    import('@/lib/liff').then(({ initLiff }) => {
-      initLiff().then((res) => {
-        if (res.success && res.profile) {
-          const isLineAdmin = res.profile.userId === 'U203ff66b7e535c901dfbfa86d93eef46';
-          setCurrentUser((prev) => ({
-            ...prev,
-            name: res.profile!.displayName || prev.name,
-            avatarUrl: res.profile!.pictureUrl || prev.avatarUrl,
-            lineUserId: res.profile!.userId,
-            role: isLineAdmin ? 'ADMIN' : prev.role,
-            isLoggedIn: true,
-          }));
-        }
-      });
-    }).catch(() => {});
   }, []);
 
-  // Save changes
-  useEffect(() => {
-    try {
-      localStorage.setItem('sappha_orders', JSON.stringify(orders));
-    } catch (e) {}
-  }, [orders]);
-
+  // Save user cart to localStorage
   useEffect(() => {
     try {
       localStorage.setItem('sappha_cart', JSON.stringify(cart));
     } catch (e) {}
   }, [cart]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('sappha_shops', JSON.stringify(shops));
-    } catch (e) {}
-  }, [shops]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('sappha_stalls', JSON.stringify(stalls));
-    } catch (e) {}
-  }, [stalls]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('sappha_products', JSON.stringify(products));
-    } catch (e) {}
-  }, [products]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('sappha_users', JSON.stringify(users));
-    } catch (e) {}
-  }, [users]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('sappha_settings', JSON.stringify(systemSettings));
-    } catch (e) {}
-  }, [systemSettings]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('sappha_reviews', JSON.stringify(reviews));
-    } catch (e) {}
-  }, [reviews]);
 
   const showToast = (type: Toast['type'], title: string, message: string) => {
     const id = Math.random().toString(36).substring(2, 9);
@@ -445,11 +557,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
+  // Switch role for the currently logged in user (persists in localStorage & Supabase)
   const switchRole = (role: UserRole) => {
-    if (role === 'STUDENT') setCurrentUser(mockUsers.student);
-    else if (role === 'MERCHANT') setCurrentUser(mockUsers.merchant);
-    else if (role === 'ADMIN') setCurrentUser(mockUsers.admin);
-    showToast('info', 'สลับบทบาทสำเร็จ', `คุณกำลังใช้งานในมุมมอง: ${role}`);
+    setCurrentUser((prev) => {
+      const updated: UserProfile = { ...prev, role };
+      try {
+        localStorage.setItem('sappha_auth_user', JSON.stringify(updated));
+      } catch (e) {}
+
+      // Update Supabase
+      import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+        if (isSupabaseConfigured && supabase && prev.id) {
+          supabase.from('users').update({ role }).eq('id', prev.id).then();
+        }
+      }).catch(() => {});
+
+      return updated;
+    });
+    showToast('info', 'สลับบทบาท', `คุณกำลังใช้งานในมุมมอง: ${role}`);
   };
 
   const updateUserProfile = (profile: Partial<UserProfile>) => {
@@ -538,7 +663,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         status: 'PENDING_APPROVAL',
         createdAt: new Date().toISOString(),
         paymentSlip: {
-          slipUrl: so.slipUrl || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80',
+          slipUrl: so.slipUrl || '',
           amount: so.subtotal,
           uploadedAt: new Date().toISOString(),
           status: 'PENDING',
@@ -672,7 +797,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                     ...order.paymentSlip,
                     status: 'REJECTED',
                     rejectionReason: reason,
-                    refundSlipUrl: refundSlipUrl || 'https://images.unsplash.com/photo-1580048915913-4f8f5cb481c4?auto=format&fit=crop&w=600&q=80',
+                    refundSlipUrl: refundSlipUrl || '',
                     refundNote: 'โอนเงินคืนเรียบร้อยตามพร้อมเพย์ผู้สั่ง',
                   }
                 : undefined,
@@ -736,14 +861,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Shop management
   const toggleShopOpen = (shopId: string) => {
-    setShops((prev) =>
-      prev.map((s) => (s.id === shopId ? { ...s, isOpen: !s.isOpen } : s))
-    );
     const shop = shops.find((s) => s.id === shopId);
+    const nextState = !shop?.isOpen;
+    
+    setShops((prev) =>
+      prev.map((s) => (s.id === shopId ? { ...s, isOpen: nextState } : s))
+    );
+
+    // Sync to Supabase
+    import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('shops').update({ is_open: nextState }).eq('id', shopId).then();
+      }
+    }).catch(() => {});
+
     showToast(
       'info',
       'อัปเดตสถานะร้านค้า',
-      `ร้าน ${shop?.name} ตอนนี้ ${!shop?.isOpen ? 'เปิดรับออเดอร์แล้ว 🟢' : 'ปิดรับชั่วคราว 🔴'}`
+      `ร้าน ${shop?.name} ตอนนี้ ${nextState ? 'เปิดรับออเดอร์แล้ว 🟢' : 'ปิดรับชั่วคราว 🔴'}`
     );
   };
 
@@ -751,6 +886,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setShops((prev) =>
       prev.map((s) => (s.id === shopId ? { ...s, isApproved: true } : s))
     );
+
+    // Sync to Supabase
+    import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('shops').update({ is_approved: true }).eq('id', shopId).then();
+      }
+    }).catch(() => {});
+
     showToast('success', 'อนุมัติร้านค้าสำเร็จ', 'ร้านค้าสามารถเริ่มเปิดขายได้ทันที');
   };
 
@@ -780,9 +923,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             : u
         )
       );
+
+      // Update Supabase user role and shop_id
+      import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+        if (isSupabaseConfigured && supabase) {
+          supabase.from('users').update({ role: 'MERCHANT', shop_id: newShopId }).eq('id', bindUserId).then();
+        }
+      }).catch(() => {});
     }
 
-    // Sync to Supabase if configured
+    // Sync to Supabase
     import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
       if (isSupabaseConfigured && supabase) {
         supabase
@@ -831,8 +981,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (updates.isOpen !== undefined) payload.is_open = updates.isOpen;
         if (updates.isApproved !== undefined) payload.is_approved = updates.isApproved;
         if (updates.registrationFeePaid !== undefined) payload.registration_fee_paid = updates.registrationFeePaid;
-        if (updates.bannerUrl) payload.banner_url = updates.bannerUrl;
-        if (updates.imageUrl) payload.image_url = updates.imageUrl;
+        if (updates.bannerUrl !== undefined) payload.banner_url = updates.bannerUrl;
+        if (updates.imageUrl !== undefined) payload.image_url = updates.imageUrl;
 
         supabase.from('shops').update(payload).eq('id', shopId).then();
       }
@@ -868,17 +1018,56 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           : p
       )
     );
+
+    // Sync to Supabase
+    import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('products').update({ daily_quota: newQuota }).eq('id', productId).then();
+      }
+    }).catch(() => {});
   };
 
   const toggleProductAvailability = (productId: string) => {
+    const prod = products.find((p) => p.id === productId);
+    const nextState = !prod?.isAvailable;
+
     setProducts((prev) =>
-      prev.map((p) => (p.id === productId ? { ...p, isAvailable: !p.isAvailable } : p))
+      prev.map((p) => (p.id === productId ? { ...p, isAvailable: nextState } : p))
     );
+
+    // Sync to Supabase
+    import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('products').update({ is_available: nextState }).eq('id', productId).then();
+      }
+    }).catch(() => {});
   };
 
   const addProduct = (product: Omit<Product, 'id'>) => {
     const id = `p_${product.shopId}_${Date.now()}`;
-    setProducts((prev) => [...prev, { ...product, id }]);
+    const newProduct: Product = { ...product, id };
+    
+    setProducts((prev) => [...prev, newProduct]);
+
+    // Sync to Supabase
+    import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('products').insert({
+          id: newProduct.id,
+          shop_id: newProduct.shopId,
+          name: newProduct.name,
+          description: newProduct.description,
+          base_price: newProduct.basePrice,
+          image_url: newProduct.imageUrl,
+          category: newProduct.category,
+          daily_quota: newProduct.dailyQuota,
+          quota_remaining: newProduct.quotaRemaining,
+          is_available: newProduct.isAvailable,
+          option_groups: newProduct.optionGroups,
+        }).then();
+      }
+    }).catch(() => {});
+
     showToast('success', 'เพิ่มเมนูอาหารสำเร็จ', `เพิ่ม ${product.name} เข้าระบบแล้ว`);
   };
 
@@ -886,46 +1075,140 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setProducts((prev) =>
       prev.map((p) => (p.id === productId ? { ...p, ...updates } : p))
     );
+
+    // Sync to Supabase
+    import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+      if (isSupabaseConfigured && supabase) {
+        const payload: any = {};
+        if (updates.name) payload.name = updates.name;
+        if (updates.description !== undefined) payload.description = updates.description;
+        if (updates.basePrice !== undefined) payload.base_price = updates.basePrice;
+        if (updates.imageUrl !== undefined) payload.image_url = updates.imageUrl;
+        if (updates.category) payload.category = updates.category;
+        if (updates.dailyQuota !== undefined) payload.daily_quota = updates.dailyQuota;
+        if (updates.quotaRemaining !== undefined) payload.quota_remaining = updates.quotaRemaining;
+        if (updates.isAvailable !== undefined) payload.is_available = updates.isAvailable;
+        if (updates.optionGroups) payload.option_groups = updates.optionGroups;
+
+        supabase.from('products').update(payload).eq('id', productId).then();
+      }
+    }).catch(() => {});
+
     showToast('success', 'อัปเดตเมนูสำเร็จ', 'ข้อมูลเมนูอาหารได้รับการปรับปรุงเรียบร้อย');
   };
 
   const deleteProduct = (productId: string) => {
     setProducts((prev) => prev.filter((p) => p.id !== productId));
+
+    // Sync to Supabase
+    import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('products').delete().eq('id', productId).then();
+      }
+    }).catch(() => {});
+
     showToast('info', 'ลบเมนูแล้ว', 'ลบรายการเมนูออกจากระบบเรียบร้อย');
   };
 
   // Stalls
   const addStall = (stall: Omit<StallLocation, 'id'>) => {
     const id = `stall_${Date.now()}`;
-    setStalls((prev) => [...prev, { ...stall, id }]);
+    const newStall: StallLocation = { ...stall, id };
+    setStalls((prev) => [...prev, newStall]);
+
+    // Sync to Supabase
+    import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('stalls').insert({
+          id: newStall.id,
+          code: newStall.code,
+          name: newStall.name,
+          description: newStall.description,
+        }).then();
+      }
+    }).catch(() => {});
+
     showToast('success', 'เพิ่มล็อกโรงอาหารแล้ว', `เพิ่ม ${stall.name} สำเร็จ`);
   };
 
   const deleteStall = (stallId: string) => {
     setStalls((prev) => prev.filter((s) => s.id !== stallId));
+
+    // Sync to Supabase
+    import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('stalls').delete().eq('id', stallId).then();
+      }
+    }).catch(() => {});
+
     showToast('info', 'ลบล็อกโรงอาหารแล้ว', 'ลบข้อมูลล็อกออกจากระบบเรียบร้อย');
   };
 
   // Holidays
   const addHoliday = (holiday: Omit<SchoolHoliday, 'id'>) => {
     const id = `h_${Date.now()}`;
-    setHolidays((prev) => [...prev, { ...holiday, id }]);
+    const newHoliday: SchoolHoliday = { ...holiday, id };
+    setHolidays((prev) => [...prev, newHoliday]);
+
+    // Sync to Supabase
+    import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('school_holidays').insert({
+          id: newHoliday.id,
+          date: newHoliday.date,
+          name: newHoliday.name,
+          is_locked: newHoliday.isLocked,
+        }).then();
+      }
+    }).catch(() => {});
+
     showToast('warning', 'ตั้งค่าวันหยุดโรงเรียนแล้ว', `ระบบจะปิดรับออเดอร์ในวันที่ ${holiday.date}`);
   };
 
   const deleteHoliday = (holidayId: string) => {
     setHolidays((prev) => prev.filter((h) => h.id !== holidayId));
+
+    // Sync to Supabase
+    import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('school_holidays').delete().eq('id', holidayId).then();
+      }
+    }).catch(() => {});
   };
 
   // Announcements
   const addAnnouncement = (ann: Omit<Announcement, 'id'>) => {
     const id = `ann_${Date.now()}`;
-    setAnnouncements((prev) => [{ ...ann, id }, ...prev]);
+    const newAnn: Announcement = { ...ann, id };
+    setAnnouncements((prev) => [newAnn, ...prev]);
+
+    // Sync to Supabase
+    import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('announcements').insert({
+          id: newAnn.id,
+          title: newAnn.title,
+          subtitle: newAnn.subtitle,
+          content: newAnn.content,
+          image_url: newAnn.imageUrl,
+          badge_text: newAnn.badgeText,
+          is_active: newAnn.isActive,
+        }).then();
+      }
+    }).catch(() => {});
+
     showToast('success', 'เผยแพร่ประกาศแล้ว', 'ประกาศใหม่จะแสดงบนหน้าแรกทันที');
   };
 
   const deleteAnnouncement = (id: string) => {
     setAnnouncements((prev) => prev.filter((a) => a.id !== id));
+
+    // Sync to Supabase
+    import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('announcements').delete().eq('id', id).then();
+      }
+    }).catch(() => {});
   };
 
   // Fees
@@ -965,7 +1248,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       )
     );
 
-    showToast('success', 'บันทึกการชำระเงินสำเร็จ', `บันทึกยอด 20 บาทสำหรับร้าน ${shop.name} เรียบร้อยแล้ว`);
+    // Sync to Supabase
+    import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('merchant_fee_records').insert({
+          id: newRecord.id,
+          shop_id: newRecord.shopId,
+          shop_name: newRecord.shopName,
+          type: newRecord.type,
+          amount: newRecord.amount,
+          paid_at: newRecord.paidAt,
+          valid_until: newRecord.validUntil,
+          note: newRecord.note,
+        }).then();
+
+        supabase.from('shops').update({
+          registration_fee_paid: type === 'REGISTRATION' ? true : shop.registrationFeePaid,
+          subscription_expires_at: type === 'MONTHLY' ? newExpire.toISOString() : shop.subscriptionExpiresAt,
+        }).eq('id', shopId).then();
+      }
+    }).catch(() => {});
+
+    showToast('success', 'บันทึกการชำระเงินสำเร็จ', `บันทึกยอดสำหรับร้าน ${shop.name} เรียบร้อยแล้ว`);
   };
 
   // User Management
@@ -974,6 +1278,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       prev.map((u) => {
         if (u.id === userId) {
           const newStatus = u.isActive === false ? true : false;
+
+          // Sync to Supabase
+          import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+            if (isSupabaseConfigured && supabase) {
+              supabase.from('users').update({ is_active: newStatus }).eq('id', userId).then();
+            }
+          }).catch(() => {});
+
           showToast(
             newStatus ? 'success' : 'warning',
             'อัปเดตสถานะผู้ใช้',
@@ -989,6 +1301,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // System Settings
   const updateSystemSettings = (settings: Partial<SystemSettings>) => {
     setSystemSettings((prev) => ({ ...prev, ...settings }));
+
+    // Sync to Supabase
+    import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+      if (isSupabaseConfigured && supabase) {
+        const payload: any = {};
+        if (settings.schoolName) payload.school_name = settings.schoolName;
+        if (settings.orderOpenTime) payload.order_open_time = settings.orderOpenTime;
+        if (settings.orderCutoffTime) payload.order_cutoff_time = settings.orderCutoffTime;
+        if (settings.pickupTimeWindow) payload.pickup_time_window = settings.pickupTimeWindow;
+        if (settings.maintenanceMode !== undefined) payload.maintenance_mode = settings.maintenanceMode;
+        if (settings.emergencyBroadcast !== undefined) payload.emergency_broadcast = settings.emergencyBroadcast;
+
+        supabase.from('system_settings').upsert({ id: 1, ...payload }).then();
+      }
+    }).catch(() => {});
+
     showToast('success', 'บันทึกการตั้งค่าระบบแล้ว', 'ข้อมูลระบบกลางของโรงเรียนได้รับการอัปเดตเรียบร้อย');
   };
 
@@ -1011,6 +1339,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           : o
       )
     );
+
+    // Sync to Supabase
+    import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('orders').update({ status }).eq('id', orderId).then();
+      }
+    }).catch(() => {});
+
     showToast('info', 'แอดมินปรับสถานะออเดอร์', `ออเดอร์ถูกปรับสถานะเป็น ${status}`);
   };
 
@@ -1033,6 +1369,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       )
     );
 
+    // Sync to Supabase
+    import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('reviews').insert({
+          id: newReview.id,
+          order_id: newReview.orderId,
+          shop_id: newReview.shopId,
+          user_id: newReview.userId,
+          user_name: newReview.userName,
+          user_nickname: newReview.userNickname,
+          user_grade_room: newReview.userGradeRoom,
+          rating: newReview.rating,
+          comment: newReview.comment,
+          is_anonymous: newReview.isAnonymous,
+        }).then();
+
+        if (newReview.orderId) {
+          supabase.from('orders').update({ reviewed: true, review_id: newReview.id }).eq('id', newReview.orderId).then();
+        }
+      }
+    }).catch(() => {});
+
     showToast(
       'success',
       'ขอบคุณสำหรับคะแนนรีวิว! ⭐',
@@ -1042,6 +1400,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteReview = (reviewId: string) => {
     setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+
+    // Sync to Supabase
+    import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('reviews').delete().eq('id', reviewId).then();
+      }
+    }).catch(() => {});
+
     showToast('info', 'ลบรีวิวแล้ว', 'แอดมินได้ทำการลบรีวิวที่ไม่เหมาะสมออกจากระบบแล้ว');
   };
 

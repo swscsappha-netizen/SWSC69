@@ -22,8 +22,15 @@ export default function OrdersPage() {
   const [simulateLate, setSimulateLate] = useState(false);
   const [reviewingOrder, setReviewingOrder] = useState<Order | null>(null);
 
-  // Filter orders for current user or all mock orders
-  const userOrders = orders;
+  // Filter orders for current user or all if Admin
+  const userOrders =
+    currentUser.role === 'ADMIN'
+      ? orders
+      : orders.filter(
+          (o) =>
+            o.userId === currentUser.id ||
+            (currentUser.phone && o.userPhone === currentUser.phone)
+        );
 
   const activeOrders = userOrders.filter(
     (o) => o.status !== 'COMPLETED' && o.status !== 'CANCELLED'
