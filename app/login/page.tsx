@@ -6,15 +6,15 @@ import { useApp } from '@/context/AppContext';
 import { ArrowRight, ShieldCheck, Sparkles, MessageCircle } from 'lucide-react';
 import { initLiff, loginWithLiff } from '@/lib/liff';
 
+// Known Admin LINE UserIds (Must be defined outside component to avoid reference changes)
+const ADMIN_LINE_IDS = ['U203ff66b7e535c901dfbfa86d93eef46'];
+
 export default function LoginPage() {
   const router = useRouter();
   const { switchRole, updateUserProfile, showToast } = useApp();
 
   const [loading, setLoading] = useState(false);
   const [isLiffConnecting, setIsLiffConnecting] = useState(true);
-
-  // Known Admin LINE UserIds
-  const ADMIN_LINE_IDS = ['U203ff66b7e535c901dfbfa86d93eef46'];
 
   // Line Profile (null userId = not logged in LINE yet)
   const [lineProfile, setLineProfile] = useState<{
@@ -38,10 +38,12 @@ export default function LoginPage() {
   const [promptPay, setPromptPay] = useState('');
   const [isLockedByDatabase, setIsLockedByDatabase] = useState(false);
 
-  const runLiffInit = useCallback(() => {
+  useEffect(() => {
+    let mounted = true;
     setIsLiffConnecting(true);
 
-    initLiff().then((res) => {
+    initLiff().then(async (res) => {
+      if (!mounted) return;
       setIsLiffConnecting(false);
 
       if (res && res.success && res.profile) {
@@ -59,63 +61,62 @@ export default function LoginPage() {
         }
 
         // Check if this user already registered in Supabase
-        import('@/lib/supabase').then(async ({ supabase, isSupabaseConfigured }) => {
-          if (isSupabaseConfigured && supabase && res.profile?.userId) {
-            try {
-              const { data: existingUser } = await supabase
-                .from('users')
-                .select('*')
-                .or(`line_user_id.eq.${res.profile.userId},id.eq.${res.profile.userId}`)
-                .maybeSingle();
+        const { supabase, isSupabaseConfigured } = await import('@/lib/supabase');
+        if (isSupabaseConfigured && supabase && res.profile.userId) {
+          try {
+            const { data: existingUser } = await supabase
+              .from('users')
+              .select('*')
+              .or(`line_user_id.eq.${res.profile.userId},id.eq.${res.profile.userId}`)
+              .maybeSingle();
 
-              if (existingUser && existingUser.nickname) {
-                // User already registered -> Auto-login with saved profile!
-                const effectiveRole = isLineAdmin ? 'ADMIN' : (existingUser.role || 'STUDENT');
-                updateUserProfile({
-                  id: existingUser.id,
-                  name: existingUser.name || res.profile.displayName,
-                  nickname: existingUser.nickname,
-                  studentId: existingUser.student_id || '',
-                  gradeRoom: existingUser.grade_room || '',
-                  phone: existingUser.phone || '',
-                  promptPayNumber: existingUser.promptpay_number || '',
-                  promptPayRefund: existingUser.promptpay_refund || existingUser.promptpay_number || '',
-                  role: effectiveRole,
-                  shopId: existingUser.shop_id,
-                  avatarUrl: res.profile.pictureUrl || existingUser.avatar_url,
-                  lineUserId: res.profile.userId,
-                  isActive: existingUser.is_active !== false,
-                  isLoggedIn: true,
-                });
+            if (existingUser && existingUser.nickname && mounted) {
+              const effectiveRole = isLineAdmin ? 'ADMIN' : (existingUser.role || 'STUDENT');
+              updateUserProfile({
+                id: existingUser.id,
+                name: existingUser.name || res.profile.displayName,
+                nickname: existingUser.nickname,
+                studentId: existingUser.student_id || '',
+                gradeRoom: existingUser.grade_room || '',
+                phone: existingUser.phone || '',
+                promptPayNumber: existingUser.promptpay_number || '',
+                promptPayRefund: existingUser.promptpay_refund || existingUser.promptpay_number || '',
+                role: effectiveRole,
+                shopId: existingUser.shop_id,
+                avatarUrl: res.profile.pictureUrl || existingUser.avatar_url,
+                lineUserId: res.profile.userId,
+                isActive: existingUser.is_active !== false,
+                isLoggedIn: true,
+              });
 
-                showToast(
-                  'success',
-                  `ยินดีต้อนรับกลับ ${existingUser.nickname || existingUser.name}! 👋`,
-                  `เข้าสู่ระบบในฐานะ ${effectiveRole}`
-                );
+              showToast(
+                'success',
+                `ยินดีต้อนรับกลับ ${existingUser.nickname || existingUser.name}! 👋`,
+                `เข้าสู่ระบบในฐานะ ${effectiveRole}`
+              );
 
-                if (effectiveRole === 'ADMIN') {
-                  router.replace('/admin');
-                } else if (effectiveRole === 'MERCHANT') {
-                  router.replace('/merchant');
-                } else {
-                  router.replace('/');
-                }
+              if (effectiveRole === 'ADMIN') {
+                router.replace('/admin');
+              } else if (effectiveRole === 'MERCHANT') {
+                router.replace('/merchant');
+              } else {
+                router.replace('/');
               }
-            } catch (dbErr) {
-              console.warn('Check existing user err:', dbErr);
             }
+          } catch (dbErr) {
+            console.warn('Check existing user err:', dbErr);
           }
-        });
+        }
       }
     }).catch(() => {
-      setIsLiffConnecting(false);
+      if (mounted) setIsLiffConnecting(false);
     });
-  }, [ADMIN_LINE_IDS, router, showToast, updateUserProfile]);
 
-  useEffect(() => {
-    runLiffInit();
-  }, [runLiffInit]);
+    return () => {
+      mounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleLineLoginClick = () => {
     loginWithLiff();
