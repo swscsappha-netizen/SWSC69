@@ -28,26 +28,26 @@ export default function LoginPage() {
   // Known Admin LINE UserIds
   const ADMIN_LINE_IDS = ['U203ff66b7e535c901dfbfa86d93eef46'];
 
-  // Line Simulated Profile
+  // Line Profile
   const [lineProfile, setLineProfile] = useState<{
     userId?: string;
     name: string;
     avatarUrl: string;
   }>({
-    name: 'น้องก้อง สรรพวิทยาคม',
-    avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&q=80',
+    name: '',
+    avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
   });
 
   // Selected Role for onboarding
   const [selectedRole, setSelectedRole] = useState<'STUDENT' | 'TEACHER'>('STUDENT');
 
-  // Onboarding fields
-  const [fullName, setFullName] = useState(lineProfile.name);
+  // Onboarding fields (Real User Info)
+  const [fullName, setFullName] = useState('');
   const [studentId, setStudentId] = useState('');
-  const [nickname, setNickname] = useState('ก้อง');
+  const [nickname, setNickname] = useState('');
   const [gradeRoom, setGradeRoom] = useState('ม.5/2');
-  const [phone, setPhone] = useState('089-123-4567');
-  const [promptPay, setPromptPay] = useState('0891234567');
+  const [phone, setPhone] = useState('');
+  const [promptPay, setPromptPay] = useState('');
 
   React.useEffect(() => {
     import('@/lib/liff').then(({ initLiff }) => {
@@ -57,7 +57,7 @@ export default function LoginPage() {
           setLineProfile({
             userId: res.profile.userId,
             name: res.profile.displayName,
-            avatarUrl: res.profile.pictureUrl || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&q=80',
+            avatarUrl: res.profile.pictureUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
           });
           setFullName(res.profile.displayName);
           setNickname(res.profile.displayName.slice(0, 10));
@@ -93,14 +93,12 @@ export default function LoginPage() {
     setLoading(true);
     const { initLiff, loginWithLiff } = await import('@/lib/liff');
     const res = await initLiff();
-    if (res.success && res.isInClient) {
-      loginWithLiff();
+    if (res.success && res.profile) {
+      setStep('ONBOARDING');
+      setLoading(false);
     } else {
-      setTimeout(() => {
-        setLoading(false);
-        setStep('ONBOARDING');
-        showToast('info', 'เชื่อมต่อ LINE สำเร็จ! 💬', 'กรุณากรอกข้อมูลเพื่อเริ่มต้นใช้งาน');
-      }, 600);
+      // Direct Real LINE Login OAuth redirect
+      loginWithLiff();
     }
   };
 
