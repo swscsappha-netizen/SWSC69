@@ -7,13 +7,10 @@ import { ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { currentUser, switchRole, updateUserProfile, showToast } = useApp();
+  const { switchRole, updateUserProfile, showToast } = useApp();
 
   const [loading, setLoading] = useState(false);
-  // liffReady = true เมื่อ LIFF init + login เสร็จและได้โปรไฟล์มาแล้ว
-  const [liffReady, setLiffReady] = useState(false);
-  // liffError = ข้อความ error เมื่อ LIFF init ล้มเหลว
-  const [liffError, setLiffError] = useState<string | null>(null);
+  const [isLiffConnecting, setIsLiffConnecting] = useState(true);
 
   // Known Admin LINE UserIds
   const ADMIN_LINE_IDS = ['U203ff66b7e535c901dfbfa86d93eef46'];
@@ -28,9 +25,6 @@ export default function LoginPage() {
     avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
   });
 
-  // Show manual action buttons if LIFF takes more than 3 seconds
-  const [showManualOptions, setShowManualOptions] = useState(false);
-
   // Selected Role for onboarding
   const [selectedRole, setSelectedRole] = useState<'STUDENT' | 'TEACHER' | 'ADMIN'>('STUDENT');
 
@@ -44,122 +38,86 @@ export default function LoginPage() {
   const [isLockedByDatabase, setIsLockedByDatabase] = useState(false);
 
   const runLiffInit = useCallback(() => {
-    setLiffError(null);
+    setIsLiffConnecting(true);
 
-    // Timeout fallback หลัง 8 วินาที
-    const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000));
+    import('@/lib/liff').then(({ initLiff }) => {
+      initLiff().then((res) => {
+        setIsLiffConnecting(false);
 
-    const liffPromise = import('@/lib/liff').then(({ initLiff }) => initLiff());
+        if (res && res.success && res.profile) {
+          const isLineAdmin = ADMIN_LINE_IDS.includes(res.profile.userId);
+          setLineProfile({
+            userId: res.profile.userId,
+            name: res.profile.displayName,
+            avatarUrl: res.profile.pictureUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
+          });
 
-    Promise.race([liffPromise, timeoutPromise]).then((res) => {
-      if (res === null) {
-        setShowManualOptions(true);
-        return;
-      }
+          if (isLineAdmin) {
+            setSelectedRole('ADMIN');
+            setGradeRoom('ผู้ดูแลระบบโรงเรียน');
+            setStudentId('ADMIN-01');
+          }
 
-      if (!res.success && res.error) {
-        setLiffError(`ไม่สามารถเชื่อมต่อ LINE ได้: ${res.error}`);
-        setShowManualOptions(true);
-        return;
-      }
+          // Check if this user already registered in Supabase
+          import('@/lib/supabase').then(async ({ supabase, isSupabaseConfigured }) => {
+            if (isSupabaseConfigured && supabase && res.profile?.userId) {
+              try {
+                const { data: existingUser } = await supabase
+                  .from('users')
+                  .select('*')
+                  .or(`line_user_id.eq.${res.profile.userId},id.eq.${res.profile.userId}`)
+                  .maybeSingle();
 
-      if (!res.success) {
-        // liff.login() ถูกเรียกแล้ว ถ้ายังไม่ redirect ภายใน 2 วินาทีให้เปิดปุ่มตัวเลือก
-        setTimeout(() => setShowManualOptions(true), 2000);
-        return;
-      }
+                if (existingUser && existingUser.nickname) {
+                  // User already registered -> Auto-login with saved profile!
+                  const effectiveRole = isLineAdmin ? 'ADMIN' : (existingUser.role || 'STUDENT');
+                  updateUserProfile({
+                    id: existingUser.id,
+                    name: existingUser.name || res.profile.displayName,
+                    nickname: existingUser.nickname,
+                    studentId: existingUser.student_id || '',
+                    gradeRoom: existingUser.grade_room || '',
+                    phone: existingUser.phone || '',
+                    promptPayNumber: existingUser.promptpay_number || '',
+                    promptPayRefund: existingUser.promptpay_refund || existingUser.promptpay_number || '',
+                    role: effectiveRole,
+                    shopId: existingUser.shop_id,
+                    avatarUrl: res.profile.pictureUrl || existingUser.avatar_url,
+                    lineUserId: res.profile.userId,
+                    isActive: existingUser.is_active !== false,
+                    isLoggedIn: true,
+                  });
 
-      if (res.success && res.profile) {
-        const isLineAdmin = ADMIN_LINE_IDS.includes(res.profile.userId);
-        setLineProfile({
-          userId: res.profile.userId,
-          name: res.profile.displayName,
-          avatarUrl: res.profile.pictureUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
-        });
-        setFullName(res.profile.displayName);
-        setNickname(res.profile.displayName.slice(0, 10));
+                  showToast(
+                    'success',
+                    `ยินดีต้อนรับกลับ ${existingUser.nickname || existingUser.name}! 👋`,
+                    `เข้าสู่ระบบในฐานะ ${effectiveRole}`
+                  );
 
-        if (isLineAdmin) {
-          setSelectedRole('ADMIN');
-          setGradeRoom('ผู้ดูแลระบบโรงเรียน');
-          setStudentId('ADMIN-01');
-        }
-
-        // Check if this user already registered in Supabase (with 2s timeout safeguard)
-        const checkDbPromise = import('@/lib/supabase').then(async ({ supabase, isSupabaseConfigured }) => {
-          if (isSupabaseConfigured && supabase && res.profile?.userId) {
-            try {
-              const { data: existingUser } = await supabase
-                .from('users')
-                .select('*')
-                .or(`line_user_id.eq.${res.profile.userId},id.eq.${res.profile.userId}`)
-                .maybeSingle();
-
-              if (existingUser && existingUser.nickname) {
-                // User already registered -> Auto-login with saved profile!
-                const effectiveRole = isLineAdmin ? 'ADMIN' : (existingUser.role || 'STUDENT');
-                updateUserProfile({
-                  id: existingUser.id,
-                  name: existingUser.name || res.profile.displayName,
-                  nickname: existingUser.nickname,
-                  studentId: existingUser.student_id || '',
-                  gradeRoom: existingUser.grade_room || '',
-                  phone: existingUser.phone || '',
-                  promptPayNumber: existingUser.promptpay_number || '',
-                  promptPayRefund: existingUser.promptpay_refund || existingUser.promptpay_number || '',
-                  role: effectiveRole,
-                  shopId: existingUser.shop_id,
-                  avatarUrl: res.profile.pictureUrl || existingUser.avatar_url,
-                  lineUserId: res.profile.userId,
-                  isActive: existingUser.is_active !== false,
-                  isLoggedIn: true,
-                });
-
-                showToast(
-                  'success',
-                  `ยินดีต้อนรับกลับ ${existingUser.nickname || existingUser.name}! 👋`,
-                  `เข้าสู่ระบบในฐานะ ${effectiveRole}`
-                );
-
-                if (effectiveRole === 'ADMIN') {
-                  router.replace('/admin');
-                } else if (effectiveRole === 'MERCHANT') {
-                  router.replace('/merchant');
-                } else {
-                  router.replace('/');
+                  if (effectiveRole === 'ADMIN') {
+                    router.replace('/admin');
+                  } else if (effectiveRole === 'MERCHANT') {
+                    router.replace('/merchant');
+                  } else {
+                    router.replace('/');
+                  }
                 }
-                return true;
+              } catch (dbErr) {
+                console.warn('Check existing user err:', dbErr);
               }
-            } catch (dbErr) {
-              console.warn('Check existing user err:', dbErr);
             }
-          }
-          return false;
-        });
-
-        const dbTimeout = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 2000));
-
-        Promise.race([checkDbPromise, dbTimeout]).then((isExisting) => {
-          if (!isExisting) {
-            // New User -> Show Onboarding Form!
-            setLiffReady(true);
-          }
-        });
-      } else {
-        setLiffReady(true);
-      }
-    }).catch((err: any) => {
-      setLiffError(err?.message || 'เชื่อมต่อ LINE ไม่สำเร็จ กรุณาลองใหม่');
-      setShowManualOptions(true);
+          });
+        }
+      }).catch(() => {
+        setIsLiffConnecting(false);
+      });
+    }).catch(() => {
+      setIsLiffConnecting(false);
     });
   }, [ADMIN_LINE_IDS, router, showToast, updateUserProfile]);
 
   useEffect(() => {
     runLiffInit();
-    const timer = setTimeout(() => {
-      setShowManualOptions(true);
-    }, 2500);
-    return () => clearTimeout(timer);
   }, [runLiffInit]);
 
   const handleCompleteOnboarding = (e: React.FormEvent) => {
@@ -168,10 +126,12 @@ export default function LoginPage() {
 
     const isLineAdmin = lineProfile.userId && ADMIN_LINE_IDS.includes(lineProfile.userId);
     const effectiveRole = isLineAdmin ? 'ADMIN' : selectedRole;
+    const finalUserId = lineProfile.userId || `user_${Date.now()}`;
 
     setTimeout(() => {
       switchRole(effectiveRole);
       updateUserProfile({
+        id: finalUserId,
         name: fullName.trim() || lineProfile.name || (selectedRole === 'TEACHER' ? 'คุณครู สรรพวิทยาคม' : 'นักเรียน สรรพวิทยาคม'),
         nickname: nickname.trim() || (effectiveRole === 'ADMIN' ? 'แอดมิน' : selectedRole === 'TEACHER' ? 'ครู' : 'ส.ว.'),
         studentId: studentId.trim() || (effectiveRole === 'ADMIN' ? 'ADMIN-01' : selectedRole === 'TEACHER' ? 'T-STAFF' : '45892'),
@@ -180,7 +140,7 @@ export default function LoginPage() {
         promptPayNumber: promptPay.trim() || phone.trim() || '0891234567',
         promptPayRefund: promptPay.trim() || '0891234567',
         avatarUrl: lineProfile.avatarUrl,
-        lineUserId: lineProfile.userId,
+        lineUserId: lineProfile.userId || finalUserId,
         role: effectiveRole,
         isActive: true,
         isLoggedIn: true,
@@ -190,8 +150,8 @@ export default function LoginPage() {
       import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
         if (isSupabaseConfigured && supabase) {
           supabase.from('users').upsert({
-            id: lineProfile.userId || `user_${Date.now()}`,
-            line_user_id: lineProfile.userId,
+            id: finalUserId,
+            line_user_id: lineProfile.userId || finalUserId,
             name: fullName.trim() || lineProfile.name || 'ผู้ใช้งาน ส.ว.',
             nickname: nickname.trim(),
             student_id: studentId.trim(),
@@ -215,7 +175,7 @@ export default function LoginPage() {
         showToast('success', 'เข้าสู่ระบบสำเร็จ! 🎉', greeting);
         router.replace('/');
       }
-    }, 400);
+    }, 300);
   };
 
   return (
@@ -223,7 +183,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200/80 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header Hero */}
-        <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-7 text-center text-white relative">
+        <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-6 text-center text-white relative">
           <div className="w-14 h-14 mx-auto rounded-3xl bg-gradient-to-tr from-brand-500 to-amber-400 text-white flex items-center justify-center font-black text-2xl shadow-lg mb-2.5">
             SW
           </div>
@@ -235,315 +195,255 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Loading while LIFF is initializing / redirecting to LINE login */}
-        {!liffReady && (
-          <div className="p-8 sm:p-10 flex flex-col items-center justify-center gap-4 text-center">
-            {liffError ? (
-              /* Error State — แสดงเมื่อ LIFF ล้มเหลว พร้อมปุ่มลองใหม่ */
-              <>
-                <div className="w-16 h-16 rounded-full bg-red-50 border-2 border-red-200 flex items-center justify-center text-2xl">
-                  ⚠️
+        {/* Immediate Interactive Onboarding Form (Zero-blocking on all devices) */}
+        <form onSubmit={handleCompleteOnboarding} className="p-6 sm:p-8 space-y-4 text-xs">
+          
+          {/* LINE Connection Status Badge */}
+          {lineProfile.userId ? (
+            <div className="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 font-bold text-xs">
+              <div className="flex items-center gap-2 truncate">
+                <div className="w-7 h-7 rounded-full overflow-hidden border border-emerald-400 flex-shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={lineProfile.avatarUrl} alt="LINE" className="w-full h-full object-cover" />
                 </div>
-                <div className="space-y-1">
-                  <p className="font-bold text-slate-800 text-sm">เชื่อมต่อ LINE ไม่สำเร็จ</p>
-                  <p className="text-[11px] text-slate-500">{liffError}</p>
-                </div>
-                <div className="w-full space-y-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={runLiffInit}
-                    className="w-full py-2.5 bg-[#06C755] hover:bg-[#05b34b] text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
-                  >
-                    <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M24 10.304c0-5.369-5.383-9.738-12-9.738-6.616 0-12 4.369-12 9.738 0 4.814 4.269 8.846 10.019 9.587.39.085.922.26 1.057.595.121.302.079.774.039 1.08l-.168 1.014c-.052.308-.242 1.205 1.056.657 1.298-.548 7.009-4.128 9.563-7.067 1.62-1.745 2.434-3.535 2.434-5.866z"/></svg>
-                    <span>ลองเชื่อมต่อ LINE อีกครั้ง</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLineProfile({
-                        userId: `guest_${Date.now()}`,
-                        name: 'นักเรียน สรรพวิทยาคม',
-                        avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
-                      });
-                      setLiffReady(true);
-                    }}
-                    className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition"
-                  >
-                    <span>⚡ ข้ามไปกรอกเลขประจำตัว 5 หลักทันที</span>
-                  </button>
-                </div>
-              </>
-            ) : (
-              /* Normal Loading State */
-              <>
-                <div className="relative w-16 h-16">
-                  <div className="absolute inset-0 rounded-full border-4 border-slate-100"></div>
-                  <div className="absolute inset-0 rounded-full border-4 border-t-emerald-500 animate-spin"></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="#06C755"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.494.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
-                  </div>
-                </div>
-                <div>
-                  <p className="font-bold text-slate-800 text-sm">กำลังเชื่อมต่อบัญชี LINE...</p>
-                  <p className="text-[11px] text-slate-500 mt-1">ระบบกำลังยืนยันตัวตนผ่าน LINE<br/>กรุณารอสักครู่</p>
-                </div>
-
-                {/* Show fallback action buttons if it takes more than 2.5s */}
-                {showManualOptions && (
-                  <div className="space-y-2 w-full pt-3 border-t border-slate-100 animate-in fade-in slide-in-from-bottom-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        import('@/lib/liff').then(({ loginWithLiff }) => {
-                          loginWithLiff();
-                        });
-                      }}
-                      className="w-full py-2.5 px-4 bg-[#06C755] hover:bg-[#05b34b] text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
-                    >
-                      <svg className="w-4 h-4 fill-white" viewBox="0 0 24 24"><path d="M24 10.304c0-5.369-5.383-9.738-12-9.738-6.616 0-12 4.369-12 9.738 0 4.814 4.269 8.846 10.019 9.587.39.085.922.26 1.057.595.121.302.079.774.039 1.08l-.168 1.014c-.052.308-.242 1.205 1.056.657 1.298-.548 7.009-4.128 9.563-7.067 1.62-1.745 2.434-3.535 2.434-5.866z"/></svg>
-                      <span>กดที่นี่เพื่อเข้าสู่ระบบด้วย LINE</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setLineProfile({
-                          userId: `guest_${Date.now()}`,
-                          name: 'นักเรียน สรรพวิทยาคม',
-                          avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
-                        });
-                        setLiffReady(true);
-                      }}
-                      className="w-full py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5"
-                    >
-                      <span>⚡ ดำเนินการต่อด้วยเลขประจำตัว 5 หลัก</span>
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Onboarding Form — แสดงเมื่อ LINE login สำเร็จแล้วเท่านั้น */}
-        {liffReady && (
-          <form onSubmit={handleCompleteOnboarding} className="p-6 sm:p-8 space-y-4 text-xs">
-            <div className="text-center space-y-1 pb-2 border-b border-slate-100">
-              <div className="w-14 h-14 mx-auto rounded-full overflow-hidden border-2 border-emerald-400 mb-1 shadow-sm">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={lineProfile.avatarUrl} alt="LINE avatar" className="w-full h-full object-cover" />
+                <span className="truncate">เชื่อมต่อ LINE แล้ว: {lineProfile.name}</span>
               </div>
-              <h2 className="font-extrabold text-base text-slate-900">
-                {selectedRole === 'STUDENT' ? 'ข้อมูลนักเรียน สรรพวิทยาคม' : 'ข้อมูลครูและบุคลากร สรรพวิทยาคม'}
-              </h2>
-              {lineProfile.userId ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  เชื่อมต่อบัญชี LINE สำเร็จ ({lineProfile.name})
+              <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full flex-shrink-0">
+                พร้อมใช้งาน ✅
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-700 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0"></span>
+                <span className="font-bold text-[11px]">
+                  {isLiffConnecting ? 'กำลังตรวจสถานะ LINE...' : 'เข้าใช้งานระบบโรงอาหาร'}
                 </span>
-              ) : (
-                <p className="text-[11px] text-slate-500">
-                  กรอกข้อมูลครั้งแรกเพื่อระบุตัวตนบนตั๋วรับอาหาร
-                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  import('@/lib/liff').then(({ loginWithLiff }) => {
+                    loginWithLiff();
+                  });
+                }}
+                className="px-3 py-1.5 bg-[#06C755] hover:bg-[#05b34b] text-white font-extrabold text-[11px] rounded-xl transition flex items-center gap-1.5 shadow-sm flex-shrink-0"
+              >
+                <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M24 10.304c0-5.369-5.383-9.738-12-9.738-6.616 0-12 4.369-12 9.738 0 4.814 4.269 8.846 10.019 9.587.39.085.922.26 1.057.595.121.302.079.774.039 1.08l-.168 1.014c-.052.308-.242 1.205 1.056.657 1.298-.548 7.009-4.128 9.563-7.067 1.62-1.745 2.434-3.535 2.434-5.866z"/></svg>
+                <span>เข้าสู่ระบบ LINE</span>
+              </button>
+            </div>
+          )}
+
+          {/* Role Selection Tabs */}
+          <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-2xl">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedRole('STUDENT');
+                if (gradeRoom === 'กลุ่มสาระวิทยาศาสตร์' || gradeRoom.includes('กลุ่มสาระ')) setGradeRoom('ม.5/2');
+              }}
+              className={`py-2 px-3 rounded-xl font-bold transition flex items-center justify-center gap-1.5 ${
+                selectedRole === 'STUDENT'
+                  ? 'bg-white text-brand-700 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <span>🎓 นักเรียน</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedRole('TEACHER');
+                if (gradeRoom === 'ม.5/2' || gradeRoom.includes('ม.')) setGradeRoom('กลุ่มสาระวิทยาศาสตร์');
+              }}
+              className={`py-2 px-3 rounded-xl font-bold transition flex items-center justify-center gap-1.5 ${
+                selectedRole === 'TEACHER'
+                  ? 'bg-white text-purple-700 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <span>👨‍🏫 ครู / บุคลากร</span>
+            </button>
+          </div>
+
+          {/* Student ID Lookup Field (Top Priority for Students) */}
+          {selectedRole === 'STUDENT' ? (
+            <div className="space-y-1.5 p-3.5 bg-orange-50/70 border border-orange-200/80 rounded-2xl">
+              <label className="font-extrabold text-slate-800 text-xs flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-brand-700">
+                  <span>🆔 เลขประจำตัวนักเรียน (5 หลัก)</span>
+                  <span className="text-red-500">*</span>
+                </span>
+                <span className="text-[10px] text-brand-600 font-bold bg-white px-2 py-0.5 rounded-full border border-orange-200">
+                  ดึงชื่อและห้องอัตโนมัติ ⚡
+                </span>
+              </label>
+              <input
+                type="text"
+                required
+                maxLength={6}
+                value={studentId}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^0-9]/g, '');
+                  setStudentId(val);
+                  if (val.length >= 4) {
+                    import('@/lib/studentsLookup').then(({ findStudentById }) => {
+                      const res = findStudentById(val);
+                      if (res.found && res.student) {
+                        setFullName(res.student.fullName);
+                        setGradeRoom(res.student.gradeRoom);
+                        setIsLockedByDatabase(true);
+                        showToast(
+                          'success',
+                          'พบข้อมูลนักเรียน! 🎓',
+                          `${res.student.fullName} (${res.student.gradeRoom}) เลขที่ ${res.student.studentNumber}`
+                        );
+                      } else {
+                        setIsLockedByDatabase(false);
+                      }
+                    });
+                  } else {
+                    setIsLockedByDatabase(false);
+                  }
+                }}
+                placeholder="เช่น 34890 หรือ 31774"
+                className="w-full p-3 bg-white border border-orange-300 rounded-xl font-mono font-black text-base text-brand-700 focus:ring-2 focus:ring-brand-500 shadow-sm"
+              />
+              
+              {fullName && gradeRoom && (
+                <div className="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 font-bold text-[11px] animate-in fade-in slide-in-from-top-1">
+                  <span className="text-sm">🔒</span>
+                  <div className="flex-1 truncate">
+                    <span className="font-extrabold">{fullName}</span> ({gradeRoom})
+                  </div>
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md font-extrabold">
+                    ฐานข้อมูลทางการ
+                  </span>
+                </div>
               )}
             </div>
-
-            {/* Role Selection Tabs */}
-            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-2xl">
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedRole('STUDENT');
-                  if (gradeRoom === 'กลุ่มสาระวิทยาศาสตร์' || gradeRoom.includes('กลุ่มสาระ')) setGradeRoom('ม.5/2');
-                }}
-                className={`py-2 px-3 rounded-xl font-bold transition flex items-center justify-center gap-1.5 ${
-                  selectedRole === 'STUDENT'
-                    ? 'bg-white text-brand-700 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <span>🎓 นักเรียน</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedRole('TEACHER');
-                  if (gradeRoom === 'ม.5/2' || gradeRoom.includes('ม.')) setGradeRoom('กลุ่มสาระวิทยาศาสตร์');
-                }}
-                className={`py-2 px-3 rounded-xl font-bold transition flex items-center justify-center gap-1.5 ${
-                  selectedRole === 'TEACHER'
-                    ? 'bg-white text-purple-700 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <span>👨‍🏫 ครู / บุคลากร</span>
-              </button>
+          ) : (
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">
+                รหัสประจำตัวครู / บุคลากร (ถ้ามี):
+              </label>
+              <input
+                type="text"
+                maxLength={10}
+                value={studentId}
+                onChange={(e) => setStudentId(e.target.value)}
+                placeholder="เช่น T-102 หรือเว้นว่างได้"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:bg-white focus:ring-2 focus:ring-purple-500"
+              />
             </div>
+          )}
 
-            {/* Student ID Lookup Field (Top Priority for Students) */}
-            {selectedRole === 'STUDENT' ? (
-              <div className="space-y-1.5 p-3.5 bg-orange-50/70 border border-orange-200/80 rounded-2xl">
-                <label className="font-extrabold text-slate-800 text-xs flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-brand-700">
-                    <span>🆔 เลขประจำตัวนักเรียน (5 หลัก)</span>
-                    <span className="text-red-500">*</span>
+          {/* Name & Grade Room Details */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="font-bold text-slate-700 block mb-1 flex items-center justify-between">
+                <span>ชื่อ - นามสกุลจริง <span className="text-red-500">*</span>:</span>
+                {selectedRole === 'STUDENT' && isLockedByDatabase && (
+                  <span className="text-[10px] text-slate-500 font-bold flex items-center gap-0.5">
+                    🔒 ล็อค
                   </span>
-                  <span className="text-[10px] text-brand-600 font-bold bg-white px-2 py-0.5 rounded-full border border-orange-200">
-                    ดึงชื่อและห้องอัตโนมัติ ⚡
-                  </span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  maxLength={6}
-                  value={studentId}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/[^0-9]/g, '');
-                    setStudentId(val);
-                    if (val.length >= 4) {
-                      import('@/lib/studentsLookup').then(({ findStudentById }) => {
-                        const res = findStudentById(val);
-                        if (res.found && res.student) {
-                          setFullName(res.student.fullName);
-                          setGradeRoom(res.student.gradeRoom);
-                          setIsLockedByDatabase(true);
-                          showToast(
-                            'success',
-                            'พบข้อมูลนักเรียน! 🎓',
-                            `${res.student.fullName} (${res.student.gradeRoom}) เลขที่ ${res.student.studentNumber}`
-                          );
-                        } else {
-                          setIsLockedByDatabase(false);
-                        }
-                      });
-                    } else {
-                      setIsLockedByDatabase(false);
-                    }
-                  }}
-                  placeholder="เช่น 34890 หรือ 31774"
-                  className="w-full p-3 bg-white border border-orange-300 rounded-xl font-mono font-black text-base text-brand-700 focus:ring-2 focus:ring-brand-500 shadow-sm"
-                />
-                
-                {fullName && gradeRoom && (
-                  <div className="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 font-bold text-[11px] animate-in fade-in slide-in-from-top-1">
-                    <span className="text-sm">🔒</span>
-                    <div className="flex-1 truncate">
-                      <span className="font-extrabold">{fullName}</span> ({gradeRoom})
-                    </div>
-                    <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md font-extrabold">
-                      ฐานข้อมูลทางการ
-                    </span>
-                  </div>
                 )}
-              </div>
-            ) : (
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  รหัสประจำตัวครู / บุคลากร (ถ้ามี):
-                </label>
-                <input
-                  type="text"
-                  maxLength={10}
-                  value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
-                  placeholder="เช่น T-102 หรือเว้นว่างได้"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:bg-white focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-            )}
-
-            {/* Name & Grade Room Details */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="font-bold text-slate-700 block mb-1 flex items-center justify-between">
-                  <span>ชื่อ - นามสกุลจริง <span className="text-red-500">*</span>:</span>
-                  {selectedRole === 'STUDENT' && isLockedByDatabase && (
-                    <span className="text-[10px] text-slate-500 font-bold flex items-center gap-0.5">
-                      🔒 ล็อค
-                    </span>
-                  )}
-                </label>
-                <input
-                  type="text"
-                  required
-                  readOnly={selectedRole === 'STUDENT' && isLockedByDatabase}
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="เช่น นายสมชาย ใจดี"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  {selectedRole === 'STUDENT' ? 'ระดับชั้น / ห้องเรียน *:' : 'กลุ่มสาระ / ฝ่ายงาน *:'}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={gradeRoom}
-                  onChange={(e) => setGradeRoom(e.target.value)}
-                  placeholder={selectedRole === 'STUDENT' ? 'เช่น ม.5/2, ม.1/1' : 'เช่น กลุ่มสาระวิทยาศาสตร์'}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
+              </label>
+              <input
+                type="text"
+                required
+                readOnly={selectedRole === 'STUDENT' && isLockedByDatabase}
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder={selectedRole === 'STUDENT' ? 'เช่น นายสมชาย ใจดี' : 'เช่น ครูวิภาดา สอนดี'}
+                className={`w-full p-2.5 border rounded-xl font-bold transition-all ${
+                  selectedRole === 'STUDENT' && isLockedByDatabase
+                    ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed border-slate-300'
+                    : 'bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-brand-500'
+                }`}
+              />
             </div>
 
-            {/* Nickname & Phone */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  ชื่อเล่น (สำหรับเรียกรับอาหาร) <span className="text-red-500">*</span>:
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  placeholder={selectedRole === 'STUDENT' ? 'เช่น ก้อง' : 'เช่น ครูวิ'}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
+            <div>
+              <label className="font-bold text-slate-700 block mb-1 flex items-center justify-between">
+                <span>{selectedRole === 'STUDENT' ? 'ระดับชั้น / ห้องเรียน *:' : 'กลุ่มสาระ / ฝ่ายงาน *:'}</span>
+                {selectedRole === 'STUDENT' && isLockedByDatabase && (
+                  <span className="text-[10px] text-slate-500 font-bold flex items-center gap-0.5">
+                    🔒 ล็อค
+                  </span>
+                )}
+              </label>
+              <input
+                type="text"
+                required
+                readOnly={selectedRole === 'STUDENT' && isLockedByDatabase}
+                value={gradeRoom}
+                onChange={(e) => setGradeRoom(e.target.value)}
+                placeholder={selectedRole === 'STUDENT' ? 'เช่น ม.5/2, ม.1/1' : 'เช่น กลุ่มสาระวิทยาศาสตร์'}
+                className={`w-full p-2.5 border rounded-xl font-bold transition-all ${
+                  selectedRole === 'STUDENT' && isLockedByDatabase
+                    ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed border-slate-300'
+                    : 'bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-brand-500'
+                }`}
+              />
+            </div>
+          </div>
 
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  เบอร์โทรศัพท์ <span className="text-red-500">*</span>:
-                </label>
-                <input
-                  type="tel"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="089-123-4567"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:bg-white focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
+          {/* Nickname & Phone */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">
+                ชื่อเล่น (สำหรับเรียกรับอาหาร) <span className="text-red-500">*</span>:
+              </label>
+              <input
+                type="text"
+                required
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                placeholder={selectedRole === 'STUDENT' ? 'เช่น ก้อง' : 'เช่น ครูวิ'}
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-brand-500"
+              />
             </div>
 
             <div>
               <label className="font-bold text-slate-700 block mb-1">
-                บัญชีพร้อมเพย์ (สำหรับรับเงินคืนกรณีของหมด/สลิปมีปัญหา):
+                เบอร์โทรศัพท์ <span className="text-red-500">*</span>:
               </label>
               <input
-                type="text"
-                value={promptPay}
-                onChange={(e) => setPromptPay(e.target.value)}
-                placeholder="เบอร์โทรศัพท์ หรือเว้นว่างเพื่อใช้เบอร์ด้านบน"
+                type="tel"
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="089-123-4567"
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:bg-white focus:ring-2 focus:ring-brand-500"
               />
             </div>
+          </div>
 
-            <button
-              type="submit"
-              disabled={loading || !fullName || !studentId || !nickname || !phone}
-              className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 disabled:opacity-50 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 mt-2"
-            >
-              <span>{loading ? 'กำลังบันทึก...' : 'เสร็จสิ้น เริ่มสั่งอาหารเลย 🍱'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
-        )}
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">
+              บัญชีพร้อมเพย์ (สำหรับรับเงินคืนกรณีของหมด/สลิปมีปัญหา):
+            </label>
+            <input
+              type="text"
+              value={promptPay}
+              onChange={(e) => setPromptPay(e.target.value)}
+              placeholder="เบอร์โทรศัพท์ หรือเว้นว่างเพื่อใช้เบอร์ด้านบน"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:bg-white focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading || !fullName || !studentId || !nickname || !phone}
+            className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 disabled:opacity-50 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 mt-2"
+          >
+            <span>{loading ? 'กำลังบันทึก...' : 'เสร็จสิ้น เริ่มสั่งอาหารเลย 🍱'}</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </form>
       </div>
     </div>
   );
