@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { ArrowRight } from 'lucide-react';
+import { initLiff, loginWithLiff } from '@/lib/liff';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,9 +41,8 @@ export default function LoginPage() {
   const runLiffInit = useCallback(() => {
     setIsLiffConnecting(true);
 
-    import('@/lib/liff').then(({ initLiff }) => {
-      initLiff().then((res) => {
-        setIsLiffConnecting(false);
+    initLiff().then((res) => {
+      setIsLiffConnecting(false);
 
         if (res && res.success && res.profile) {
           const isLineAdmin = ADMIN_LINE_IDS.includes(res.profile.userId);
@@ -111,9 +111,6 @@ export default function LoginPage() {
       }).catch(() => {
         setIsLiffConnecting(false);
       });
-    }).catch(() => {
-      setIsLiffConnecting(false);
-    });
   }, [ADMIN_LINE_IDS, router, showToast, updateUserProfile]);
 
   useEffect(() => {
@@ -223,9 +220,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => {
-                  import('@/lib/liff').then(({ loginWithLiff }) => {
-                    loginWithLiff();
-                  });
+                  loginWithLiff();
                 }}
                 className="px-3 py-1.5 bg-[#06C755] hover:bg-[#05b34b] text-white font-extrabold text-[11px] rounded-xl transition flex items-center gap-1.5 shadow-sm flex-shrink-0"
               >

@@ -42,6 +42,13 @@ export async function initLiff(): Promise<{
       isInitialized = true;
     }
 
+    // Await liff.ready to ensure LINE native app overlay ("กำลังเข้าสู่...") dismisses immediately
+    try {
+      await liff.ready;
+    } catch (readyErr) {
+      console.warn('liff.ready warning:', readyErr);
+    }
+
     const isInClient = liff.isInClient();
     const isLoggedIn = liff.isLoggedIn();
 
