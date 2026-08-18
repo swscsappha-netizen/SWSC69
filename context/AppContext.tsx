@@ -127,7 +127,31 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<UserProfile>(initialUserProfile);
+  const [currentUser, setCurrentUser] = useState<UserProfile>(() => {
+    // Synchronously restore auth from localStorage on first render
+    // This prevents AuthGuard from seeing isLoggedIn=false before the effect runs
+    if (typeof window === 'undefined') return initialUserProfile;
+    try {
+      const savedLoggedIn = localStorage.getItem('sappha_is_logged_in') === 'true';
+      const savedAuthRaw = localStorage.getItem('sappha_auth_user');
+      if (savedLoggedIn && savedAuthRaw) {
+        const parsed = JSON.parse(savedAuthRaw);
+        if (
+          parsed &&
+          parsed.id &&
+          !parsed.id.startsWith('user_student_') &&
+          !parsed.id.startsWith('user_teacher_')
+        ) {
+          return { ...initialUserProfile, ...parsed, isLoggedIn: true };
+        }
+        if (parsed && parsed.lineUserId) {
+          return { ...initialUserProfile, ...parsed, isLoggedIn: true };
+        }
+      }
+    } catch (e) {}
+    return initialUserProfile;
+  });
+
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [shops, setShops] = useState<Shop[]>([]);

@@ -131,7 +131,6 @@ export default function LoginPage() {
     const finalUserId = lineProfile.userId || `user_${Date.now()}`;
 
     setTimeout(() => {
-      switchRole(effectiveRole);
       updateUserProfile({
         id: finalUserId,
         name: fullName.trim() || lineProfile.name || (selectedRole === 'TEACHER' ? 'คุณครู สรรพวิทยาคม' : 'นักเรียน สรรพวิทยาคม'),
@@ -177,7 +176,7 @@ export default function LoginPage() {
         showToast('success', 'เข้าสู่ระบบสำเร็จ! 🎉', greeting);
         router.replace('/');
       }
-    }, 300);
+    }, 200);
   };
 
   const isLineAuthenticated = Boolean(lineProfile.userId);

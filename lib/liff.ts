@@ -42,9 +42,12 @@ export async function initLiff(): Promise<{
       isInitialized = true;
     }
 
-    // Await liff.ready to ensure LINE native app overlay ("กำลังเข้าสู่...") dismisses immediately
+    // Await liff.ready with safety timeout to ensure LINE native app overlay dismisses immediately
     try {
-      await liff.ready;
+      await Promise.race([
+        liff.ready,
+        new Promise((resolve) => setTimeout(resolve, 2000)),
+      ]);
     } catch (readyErr) {
       console.warn('liff.ready warning:', readyErr);
     }
