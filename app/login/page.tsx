@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { ArrowRight, ShieldCheck, Sparkles, MessageCircle } from 'lucide-react';
 import { initLiff, loginWithLiff } from '@/lib/liff';
@@ -11,6 +11,7 @@ const ADMIN_LINE_IDS = ['U203ff66b7e535c901dfbfa86d93eef46'];
 
 export default function LoginPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { currentUser, updateUserProfile, showToast } = useApp();
 
   const [loading, setLoading] = useState(false);
@@ -40,7 +41,7 @@ export default function LoginPage() {
   const [isLockedByDatabase, setIsLockedByDatabase] = useState(false);
 
   useEffect(() => {
-    if (currentUser.isLoggedIn && !hasRedirectedRef.current) {
+    if (currentUser.isLoggedIn && !hasRedirectedRef.current && pathname === '/login') {
       hasRedirectedRef.current = true;
       if (currentUser.role === 'ADMIN') {
         router.replace('/admin');
@@ -50,7 +51,7 @@ export default function LoginPage() {
         router.replace('/');
       }
     }
-  }, [currentUser.isLoggedIn, currentUser.role, router]);
+  }, [currentUser.isLoggedIn, currentUser.role, pathname, router]);
 
   useEffect(() => {
     let mounted = true;
@@ -110,12 +111,14 @@ export default function LoginPage() {
                 `เข้าสู่ระบบในฐานะ ${effectiveRole}`
               );
 
-              if (effectiveRole === 'ADMIN') {
-                router.replace('/admin');
-              } else if (effectiveRole === 'MERCHANT') {
-                router.replace('/merchant');
-              } else {
-                router.replace('/');
+              if (pathname === '/login') {
+                if (effectiveRole === 'ADMIN') {
+                  router.replace('/admin');
+                } else if (effectiveRole === 'MERCHANT') {
+                  router.replace('/merchant');
+                } else {
+                  router.replace('/');
+                }
               }
             }
           } catch (dbErr) {
@@ -131,7 +134,7 @@ export default function LoginPage() {
       mounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pathname]);
 
   const handleLineLoginClick = () => {
     loginWithLiff();
@@ -183,13 +186,18 @@ export default function LoginPage() {
       }).catch(() => {});
 
       setLoading(false);
-      if (effectiveRole === 'ADMIN') {
-        showToast('success', 'เข้าสู่ระบบแอดมินสำเร็จ! 🛡️', 'ยินดีต้อนรับผู้ดูแลระบบโรงเรียน');
-        router.replace('/admin');
+      if (pathname === '/login') {
+        if (effectiveRole === 'ADMIN') {
+          showToast('success', 'เข้าสู่ระบบแอดมินสำเร็จ! 🛡️', 'ยินดีต้อนรับผู้ดูแลระบบโรงเรียน');
+          router.replace('/admin');
+        } else {
+          const greeting = selectedRole === 'TEACHER' ? `สวัสดีครับคุณครู ${nickname || fullName}` : `สวัสดีครับน้อง ${nickname || fullName} (${gradeRoom})`;
+          showToast('success', 'เข้าสู่ระบบสำเร็จ! 🎉', greeting);
+          router.replace('/');
+        }
       } else {
         const greeting = selectedRole === 'TEACHER' ? `สวัสดีครับคุณครู ${nickname || fullName}` : `สวัสดีครับน้อง ${nickname || fullName} (${gradeRoom})`;
         showToast('success', 'เข้าสู่ระบบสำเร็จ! 🎉', greeting);
-        router.replace('/');
       }
     }, 200);
   };
