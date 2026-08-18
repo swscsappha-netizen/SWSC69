@@ -18,10 +18,32 @@ function getCleanLiffId(): string {
 }
 
 /**
+ * ตรวจสอบว่า URL ปัจจุบันคือหน้าที่ LINE redirect กลับมาหลัง OAuth หรือไม่
+ * (มี liff.state หรือ code param ใน URL = เพิ่งกลับจาก LINE auth)
+ */
+function isLiffAuthCallback(): boolean {
+  if (typeof window === 'undefined') return false;
+  const params = new URLSearchParams(window.location.search);
+  const hash = window.location.hash;
+  return (
+    params.has('liff.state') ||
+    params.has('code') ||
+    hash.includes('liff.state') ||
+    hash.includes('access_token')
+  );
+}
+
+/** รอ N ms แบบ async */
+const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/**
  * Initialize LINE LIFF SDK
  * - ถ้าอยู่ใน LINE App และยังไม่ได้ login → เรียก liff.login() อัตโนมัติ (redirect)
  * - ถ้าอยู่ใน browser ปกติและยังไม่ได้ login → เรียก liff.login() เพื่อ OAuth flow
  * - ถ้า login แล้ว → ดึง profile มาเลย
+ *
+ * Fix: หลัง LINE redirect กลับมา (auth callback), isLoggedIn() อาจคืน false
+ * ชั่วคราวก่อนที่ access token จะถูก process → รอ settle ก่อนตัดสินใจ login ซ้ำ
  */
 export async function initLiff(): Promise<{ success: boolean; profile?: LiffProfile; isInClient: boolean; error?: string }> {
   if (typeof window === 'undefined') {
@@ -38,10 +60,17 @@ export async function initLiff(): Promise<{ success: boolean; profile?: LiffProf
 
     const isInClient = liff.isInClient();
 
+    // ถ้าเพิ่งกลับจาก LINE auth callback: รอให้ LIFF SDK process token ก่อน
+    // ป้องกัน isLoggedIn() คืน false ชั่วคราว → วน redirect loop
+    if (isLiffAuthCallback() && !liff.isLoggedIn()) {
+      await wait(500);
+    }
+
     if (!liff.isLoggedIn()) {
-      // ยังไม่ได้ login → เรียก liff.login() เพื่อ redirect ไปให้ LINE auth
-      liff.login();
-      // return false เพราะจะ redirect ออกไป ไม่ต้อง render อะไร
+      // ยังไม่ได้ login จริงๆ → redirect ไป LINE auth
+      // ส่ง redirectUri ชัดเจนเพื่อป้องกัน URL mismatch
+      const redirectUri = `${window.location.origin}/login`;
+      liff.login({ redirectUri });
       return { success: false, isInClient };
     }
 
@@ -84,7 +113,8 @@ export async function loginWithLiff(): Promise<void> {
     }
 
     if (!liff.isLoggedIn()) {
-      liff.login();
+      const redirectUri = `${window.location.origin}/login`;
+      liff.login({ redirectUri });
     }
   } catch (error) {
     console.error('LIFF login error:', error);
