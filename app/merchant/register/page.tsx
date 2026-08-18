@@ -44,15 +44,14 @@ export default function MerchantRegisterPage() {
   const [feeSlip, setFeeSlip] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSlipUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSlipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setFeeSlip(event.target?.result as string);
-        showToast('success', 'แนบสลิปแล้ว', 'อัปโหลดสลิปชำระค่าแรกเข้า 20 บาทเรียบร้อย');
-      };
-      reader.readAsDataURL(file);
+      showToast('info', 'กำลังอัปโหลดสลิป...', 'กำลังส่งรูปภาพเข้าสู่ไดรฟ์');
+      const { uploadImage } = await import('@/lib/uploadHelper');
+      const res = await uploadImage(file, `fee_reg_${Date.now()}.jpg`);
+      setFeeSlip(res.fileUrl);
+      showToast('success', 'แนบสลิปแล้ว 📄', res.message);
     }
   };
 

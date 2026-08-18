@@ -80,18 +80,17 @@ export default function CheckoutPage() {
     setTimeout(() => setCopiedShopId(null), 2500);
   };
 
-  const handleSlipUpload = (shopId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSlipUpload = async (shopId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setSlips((prev) => ({
-          ...prev,
-          [shopId]: event.target?.result as string,
-        }));
-        showToast('success', 'แนบสลิปแล้ว', 'อัปโหลดหลักฐานการโอนเงินสำเร็จ');
-      };
-      reader.readAsDataURL(file);
+      showToast('info', 'กำลังอัปโหลดสลิป...', 'กำลังประมวลผลและส่งรูปภาพเข้าสู่ไดรฟ์');
+      const { uploadImage } = await import('@/lib/uploadHelper');
+      const res = await uploadImage(file, `slip_${shopId}_${Date.now()}.jpg`);
+      setSlips((prev) => ({
+        ...prev,
+        [shopId]: res.fileUrl,
+      }));
+      showToast('success', 'แนบสลิปเรียบร้อย 📄', res.message);
     }
   };
 

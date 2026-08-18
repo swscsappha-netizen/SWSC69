@@ -1494,12 +1494,12 @@ export default function AdminPortalPage() {
           </form>
 
           {/* Cloud Database (Supabase) Sync Section */}
-          <div className="pt-6 border-t border-slate-100 space-y-3">
+          <div className="pt-6 border-t border-slate-100 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h4 className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
                   <Database className="w-4 h-4 text-emerald-600" />
-                  <span>ฐานข้อมูลคลาวด์จริง (Supabase Cloud Database)</span>
+                  <span>ฐานข้อมูลคลาวด์ (Supabase Cloud Database)</span>
                 </h4>
                 <p className="text-[11px] text-slate-500">
                   สถานะการเชื่อมต่อ: <strong className="text-emerald-600">เชื่อมต่อเรียลไทม์ 100% 🟢 (difbkxcxwlrnrbwfkbva.supabase.co)</strong>
@@ -1520,7 +1520,44 @@ export default function AdminPortalPage() {
                 className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5 self-start sm:self-auto"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>ทดสอบการเชื่อมต่อ Supabase</span>
+                <span>ทดสอบ Supabase</span>
+              </button>
+            </div>
+
+            {/* Google Drive Status Section */}
+            <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h4 className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                  <span>📁 พื้นที่เก็บรูปภาพ (Google Drive Cloud Storage)</span>
+                </h4>
+                <p className="text-[11px] text-slate-500">
+                  สำหรับเก็บสลิปโอนเงิน รูปเมนูอาหาร และภาพหน้าร้านค้าเข้าโฟลเดอร์ Google Drive
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  showToast('info', 'กำลังทดสอบไดรฟ์...', 'ส่งรูปทดสอบไปยัง Google Drive API');
+                  try {
+                    const testBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+                    const res = await fetch('/api/drive/upload', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ base64Data: testBase64, fileName: `test_ping_${Date.now()}.png` }),
+                    });
+                    const data = await res.json();
+                    if (data.fileId) {
+                      showToast('success', 'Google Drive พร้อมใช้งาน! 📁', `อัปโหลดเข้าโฟลเดอร์สำเร็จ (File ID: ${data.fileId.slice(0, 8)}...)`);
+                    } else {
+                      showToast('info', 'สถานะ Google Drive', data.message || 'ระบบพร้อมรับรูปภาพ (Fallback Mode)');
+                    }
+                  } catch (e: any) {
+                    showToast('error', 'ทดสอบไม่สำเร็จ', e?.message || 'เชื่อมต่อ API ไม่สำเร็จ');
+                  }
+                }}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5 self-start sm:self-auto"
+              >
+                <span>ทดสอบ Google Drive API</span>
               </button>
             </div>
           </div>

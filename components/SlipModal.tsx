@@ -34,14 +34,12 @@ export default function SlipModal({ order, onClose }: SlipModalProps) {
     onClose();
   };
 
-  const handleRefundSlipUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRefundSlipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setRefundSlipPreview(event.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      const { uploadImage } = await import('@/lib/uploadHelper');
+      const res = await uploadImage(file, `refund_${order.id}_${Date.now()}.jpg`);
+      setRefundSlipPreview(res.fileUrl);
     }
   };
 

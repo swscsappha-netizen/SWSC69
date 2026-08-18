@@ -225,21 +225,40 @@ export default function MenuForm({ initialProduct, shopId, mode }: MenuFormProps
               </div>
             </div>
 
-            {/* Image URL */}
+            {/* Image URL & File Upload */}
             <div>
-              <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1">
-                <ImageIcon className="w-3 h-3 text-slate-400" />
-                URL รูปภาพอาหาร
+              <label className="block font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                <span className="flex items-center gap-1">
+                  <ImageIcon className="w-3 h-3 text-slate-400" />
+                  รูปภาพอาหาร (อัปโหลดเข้าไดรฟ์ หรือระบุ URL)
+                </span>
+                <label className="cursor-pointer px-3 py-1 rounded-xl bg-orange-50 hover:bg-orange-100 text-brand-600 font-extrabold text-[11px] border border-orange-200 transition-all flex items-center gap-1">
+                  <span>📁 อัปโหลดรูปจากเครื่อง</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const { uploadImage } = await import('@/lib/uploadHelper');
+                        const res = await uploadImage(file, `menu_${Date.now()}.jpg`);
+                        setImageUrl(res.fileUrl);
+                      }
+                    }}
+                  />
+                </label>
               </label>
               <div className="flex gap-3 items-start">
                 <input
-                  type="url" value={imageUrl}
+                  type="url"
+                  value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/..."
+                  placeholder="https://images.unsplash.com/... หรือกดปุ่มอัปโหลดรูปจากเครื่อง"
                   className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-brand-400 transition text-[11px] font-mono"
                 />
                 {imageUrl && (
-                  <div className="w-16 h-16 rounded-2xl overflow-hidden border border-slate-200 flex-shrink-0 bg-slate-100">
+                  <div className="w-16 h-16 rounded-2xl overflow-hidden border border-slate-200 flex-shrink-0 bg-slate-100 shadow-sm">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={imageUrl} alt="preview" className="w-full h-full object-cover" />
                   </div>
