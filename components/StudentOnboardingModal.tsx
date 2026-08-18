@@ -20,11 +20,13 @@ export default function StudentOnboardingModal() {
   // Check if onboarding is needed
   // Condition: User is logged in via LINE, but has not completed their 5-digit student ID yet
   useEffect(() => {
-    if (
-      currentUser.isLoggedIn &&
-      currentUser.role !== 'ADMIN' &&
-      (!currentUser.studentId || currentUser.studentId.length < 4 || currentUser.studentId.startsWith('user_'))
-    ) {
+    const isMockOrEmptyId = !currentUser.studentId || 
+      currentUser.studentId.length < 4 || 
+      currentUser.studentId.startsWith('user_') || 
+      currentUser.studentId === 'ADMIN-01' || 
+      currentUser.studentId === '45892';
+
+    if (currentUser.isLoggedIn && isMockOrEmptyId) {
       setOpen(true);
       if (currentUser.name) setFullName(currentUser.name);
       if (currentUser.nickname) setNickname(currentUser.nickname);
@@ -77,13 +79,17 @@ export default function StudentOnboardingModal() {
 
     setSubmitting(true);
 
+    const isLineAdmin = ['U203ff66b7e535c901dfbfa86d93eef46'].includes(currentUser.lineUserId || currentUser.id) || currentUser.role === 'ADMIN';
+    const effectiveRole = isLineAdmin ? 'ADMIN' : (currentUser.role || 'STUDENT');
+
     const updatedUser = {
-      name: fullName.trim() || currentUser.name || 'นักเรียน ส.ว.',
-      nickname: nickname.trim(),
+      name: fullName.trim() || currentUser.name || (effectiveRole === 'ADMIN' ? 'ผู้ดูแลระบบ ส.ว.' : 'นักเรียน ส.ว.'),
+      nickname: nickname.trim() || (effectiveRole === 'ADMIN' ? 'แอดมิน' : 'ส.ว.'),
       studentId: studentId.trim(),
-      gradeRoom: gradeRoom.trim() || 'ม.5/2',
+      gradeRoom: gradeRoom.trim() || (effectiveRole === 'ADMIN' ? 'ผู้ดูแลระบบโรงเรียน' : 'ม.5/2'),
       phone: phone.trim(),
       promptPayRefund: phone.trim(),
+      role: effectiveRole,
       isLoggedIn: true,
     };
 
@@ -101,6 +107,7 @@ export default function StudentOnboardingModal() {
             grade_room: updatedUser.gradeRoom,
             phone: updatedUser.phone,
             promptpay_refund: updatedUser.promptPayRefund,
+            role: effectiveRole,
           })
           .eq('id', currentUser.id)
           .then();
@@ -110,11 +117,10 @@ export default function StudentOnboardingModal() {
     setTimeout(() => {
       setSubmitting(false);
       setOpen(false);
-      showToast(
-        'success',
-        'ลงทะเบียนสำเร็จ! 🎉',
-        `ยินดีต้อนรับน้อง ${nickname} (${gradeRoom}) เริ่มสั่งอาหารได้เลยครับ`
-      );
+      const greeting = effectiveRole === 'ADMIN'
+        ? `ยินดีต้อนรับแอดมิน ${updatedUser.nickname} (${updatedUser.gradeRoom}) 🛡️`
+        : `ยินดีต้อนรับน้อง ${updatedUser.nickname} (${updatedUser.gradeRoom}) 🎉`;
+      showToast('success', 'ลงทะเบียนสำเร็จ!', greeting);
     }, 300);
   };
 

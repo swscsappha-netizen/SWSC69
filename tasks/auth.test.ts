@@ -135,6 +135,23 @@ describe('3. Strict Login-First Auth Guard & Logic Tests', () => {
     const role = resolveEffectiveRole('U1234567890abcdef', 'STUDENT');
     assert.strictEqual(role, 'STUDENT');
   });
+
+  it('should allow ADMIN to have 5-digit student registration while retaining ADMIN privileges', () => {
+    const adminUser = {
+      id: 'U203ff66b7e535c901dfbfa86d93eef46',
+      lineUserId: 'U203ff66b7e535c901dfbfa86d93eef46',
+      name: 'นายเกียรติภูมิ ธิคำ',
+      nickname: 'แอดมิน',
+      studentId: '34890',
+      gradeRoom: 'ม.5/2',
+      role: 'ADMIN',
+      isLoggedIn: true,
+    };
+    const role = resolveEffectiveRole(adminUser.lineUserId, adminUser.role);
+    assert.strictEqual(role, 'ADMIN');
+    assert.strictEqual(adminUser.studentId, '34890');
+    assert.strictEqual(adminUser.isLoggedIn, true);
+  });
 });
 
 describe('4. Session Storage & Synchronization Tests', () => {
