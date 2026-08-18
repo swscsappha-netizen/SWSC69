@@ -1,0 +1,356 @@
+'use client';
+
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useApp } from '@/context/AppContext';
+import {
+  User,
+  ShieldCheck,
+  Store,
+  Sparkles,
+  ArrowRight,
+  CheckCircle2,
+  Phone,
+  CreditCard,
+  Building,
+  School,
+  Lock,
+} from 'lucide-react';
+import Link from 'next/link';
+
+export default function LoginPage() {
+  const router = useRouter();
+  const { currentUser, switchRole, updateUserProfile, showToast } = useApp();
+
+  const [step, setStep] = useState<'LOGIN' | 'ONBOARDING'>('LOGIN');
+  const [loading, setLoading] = useState(false);
+
+  // Line Simulated Profile
+  const [lineProfile, setLineProfile] = useState<{
+    name: string;
+    avatarUrl: string;
+  }>({
+    name: 'น้องก้อง สรรพวิทยาคม',
+    avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&q=80',
+  });
+
+  // Selected Role for onboarding
+  const [selectedRole, setSelectedRole] = useState<'STUDENT' | 'TEACHER'>('STUDENT');
+
+  // Onboarding fields
+  const [fullName, setFullName] = useState(lineProfile.name);
+  const [studentId, setStudentId] = useState('');
+  const [nickname, setNickname] = useState('ก้อง');
+  const [gradeRoom, setGradeRoom] = useState('ม.5/2');
+  const [phone, setPhone] = useState('089-123-4567');
+  const [promptPay, setPromptPay] = useState('0891234567');
+
+  React.useEffect(() => {
+    import('@/lib/liff').then(({ initLiff }) => {
+      initLiff().then((res) => {
+        if (res.success && res.profile) {
+          setLineProfile({
+            name: res.profile.displayName,
+            avatarUrl: res.profile.pictureUrl || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&q=80',
+          });
+          setFullName(res.profile.displayName);
+          setNickname(res.profile.displayName.slice(0, 10));
+          setStep('ONBOARDING');
+        }
+      });
+    }).catch(() => {});
+  }, []);
+
+  const handleLineLogin = async () => {
+    setLoading(true);
+    const { initLiff, loginWithLiff } = await import('@/lib/liff');
+    const res = await initLiff();
+    if (res.success && res.isInClient) {
+      loginWithLiff();
+    } else {
+      setTimeout(() => {
+        setLoading(false);
+        setStep('ONBOARDING');
+        showToast('info', 'เชื่อมต่อ LINE สำเร็จ! 💬', 'กรุณากรอกข้อมูลเพื่อเริ่มต้นใช้งาน');
+      }, 600);
+    }
+  };
+
+  const handleCompleteOnboarding = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    setTimeout(() => {
+      switchRole(selectedRole);
+      updateUserProfile({
+        name: fullName.trim() || lineProfile.name,
+        nickname: nickname.trim() || (selectedRole === 'TEACHER' ? 'ครู' : 'ก้อง'),
+        studentId: studentId.trim() || (selectedRole === 'TEACHER' ? 'T-STAFF' : '45892'),
+        gradeRoom: gradeRoom.trim() || (selectedRole === 'TEACHER' ? 'กลุ่มสาระการเรียนรู้' : 'ม.5/2'),
+        phone: phone.trim() || '089-123-4567',
+        promptPayNumber: promptPay.trim() || phone.trim() || '0891234567',
+        promptPayRefund: promptPay.trim() || '0891234567',
+        avatarUrl: lineProfile.avatarUrl,
+        role: selectedRole,
+        isActive: true,
+      });
+
+      // Sync to Supabase
+      import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+        if (isSupabaseConfigured && supabase) {
+          supabase.from('users').upsert({
+            id: `user_${Date.now()}`,
+            name: fullName.trim() || lineProfile.name,
+            nickname: nickname.trim(),
+            student_id: studentId.trim(),
+            grade_room: gradeRoom.trim(),
+            phone: phone.trim(),
+            promptpay_number: promptPay.trim(),
+            promptpay_refund: promptPay.trim(),
+            role: selectedRole,
+            avatar_url: lineProfile.avatarUrl,
+            is_active: true,
+          }).then();
+        }
+      }).catch(() => {});
+
+      setLoading(false);
+      const greeting = selectedRole === 'TEACHER' ? `สวัสดีครับคุณครู ${nickname}` : `สวัสดีครับน้อง ${nickname} (${gradeRoom})`;
+      showToast('success', 'ลงทะเบียนเข้าสู่ระบบสำเร็จ! 🎉', greeting);
+      router.push('/');
+    }, 600);
+  };
+
+  const handleQuickSwitch = (role: 'STUDENT' | 'MERCHANT' | 'ADMIN') => {
+    switchRole(role);
+    showToast('success', 'เข้าสู่ระบบสำเร็จ', `เข้าใช้งานในบทบาท ${role}`);
+    if (role === 'ADMIN') router.push('/admin');
+    else if (role === 'MERCHANT') router.push('/merchant');
+    else router.push('/');
+  };
+
+  return (
+    <div className="min-h-[80vh] flex items-center justify-center px-4 py-8">
+      <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200/80 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        
+        {/* Header Hero */}
+        <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-8 text-center text-white relative">
+          <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-tr from-brand-500 to-amber-400 text-white flex items-center justify-center font-black text-2xl shadow-lg mb-3">
+            SW
+          </div>
+          <h1 className="text-2xl font-black tracking-tight text-white">
+            Sappha PreOrder
+          </h1>
+          <p className="text-xs text-slate-300 mt-1">
+            เว็บสั่งอาหารล่วงหน้า โรงเรียนสรรพวิทยาคม
+          </p>
+        </div>
+
+        {/* Step 1: Initial Login with LINE */}
+        {step === 'LOGIN' && (
+          <div className="p-6 sm:p-8 space-y-6">
+            <div className="text-center space-y-1">
+              <h2 className="font-extrabold text-base text-slate-900">
+                เข้าสู่ระบบสำหรับนักเรียนและครู
+              </h2>
+              <p className="text-xs text-slate-500">
+                เข้าใช้งานสะดวกรวดเร็ว ปลอดภัยด้วยบัญชี LINE
+              </p>
+            </div>
+
+            {/* LINE Login Button */}
+            <button
+              onClick={handleLineLogin}
+              disabled={loading}
+              className="w-full py-4 px-6 bg-[#06C755] hover:bg-[#05b34c] active:scale-95 text-white font-extrabold text-sm rounded-2xl shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-3 group"
+            >
+              {/* LINE Icon SVG */}
+              <svg className="w-6 h-6 fill-white" viewBox="0 0 24 24">
+                <path d="M24 10.304c0-5.369-5.383-9.738-12-9.738-6.616 0-12 4.369-12 9.738 0 4.814 4.269 8.846 10.019 9.587.39.085.922.26 1.057.595.121.302.079.774.039 1.08l-.168 1.014c-.052.308-.242 1.205 1.056.657 1.298-.548 7.009-4.128 9.563-7.067 1.62-1.745 2.434-3.535 2.434-5.866z"/>
+              </svg>
+              <span>{loading ? 'กำลังเชื่อมต่อ LINE...' : 'เข้าสู่ระบบด้วย LINE (LINE Login)'}</span>
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-slate-200" />
+              <span className="text-[11px] text-slate-400 font-bold uppercase">หรือทดสอบด้วยบัญชีตัวอย่าง</span>
+              <div className="h-px flex-1 bg-slate-200" />
+            </div>
+
+            {/* Quick Role Switch Buttons for Testing */}
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              <button
+                onClick={() => handleQuickSwitch('STUDENT')}
+                className="p-3 rounded-2xl bg-orange-50 hover:bg-orange-100 text-brand-700 font-bold border border-orange-200 flex flex-col items-center gap-1 transition"
+              >
+                <User className="w-4 h-4" />
+                <span>นักเรียน</span>
+              </button>
+
+              <button
+                onClick={() => handleQuickSwitch('MERCHANT')}
+                className="p-3 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold border border-emerald-200 flex flex-col items-center gap-1 transition"
+              >
+                <Store className="w-4 h-4" />
+                <span>แม่ค้า</span>
+              </button>
+
+              <button
+                onClick={() => handleQuickSwitch('ADMIN')}
+                className="p-3 rounded-2xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold border border-blue-200 flex flex-col items-center gap-1 transition"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>แอดมิน</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: First Time Onboarding Form */}
+        {step === 'ONBOARDING' && (
+          <form onSubmit={handleCompleteOnboarding} className="p-6 sm:p-8 space-y-4 text-xs">
+            <div className="text-center space-y-1 pb-2 border-b border-slate-100">
+              <div className="w-14 h-14 mx-auto rounded-full overflow-hidden border-2 border-emerald-400 mb-1 shadow-sm">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={lineProfile.avatarUrl} alt="LINE avatar" className="w-full h-full object-cover" />
+              </div>
+              <h2 className="font-extrabold text-base text-slate-900">
+                {selectedRole === 'STUDENT' ? 'ข้อมูลนักเรียน สรรพวิทยาคม' : 'ข้อมูลครูและบุคลากร สรรพวิทยาคม'}
+              </h2>
+              <p className="text-[11px] text-slate-500">
+                กรอกข้อมูลครั้งแรกเพื่อระบุตัวตนบนตั๋วรับอาหาร
+              </p>
+            </div>
+
+            {/* Role Selection Tabs */}
+            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-2xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedRole('STUDENT');
+                  if (gradeRoom === 'กลุ่มสาระวิทยาศาสตร์' || gradeRoom.includes('กลุ่มสาระ')) setGradeRoom('ม.5/2');
+                }}
+                className={`py-2 px-3 rounded-xl font-bold transition flex items-center justify-center gap-1.5 ${
+                  selectedRole === 'STUDENT'
+                    ? 'bg-white text-brand-700 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <span>🎓 นักเรียน</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedRole('TEACHER');
+                  if (gradeRoom === 'ม.5/2' || gradeRoom.includes('ม.')) setGradeRoom('กลุ่มสาระวิทยาศาสตร์');
+                }}
+                className={`py-2 px-3 rounded-xl font-bold transition flex items-center justify-center gap-1.5 ${
+                  selectedRole === 'TEACHER'
+                    ? 'bg-white text-purple-700 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <span>👨‍🏫 ครู / บุคลากร</span>
+              </button>
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">
+                ชื่อ - นามสกุล <span className="text-red-500">*</span>:
+              </label>
+              <input
+                type="text"
+                required
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder={selectedRole === 'STUDENT' ? 'เช่น นายสมชาย ใจดี' : 'เช่น ครูวิภาดา สอนดี'}
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  ชื่อเล่น <span className="text-red-500">*</span>:
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  placeholder={selectedRole === 'STUDENT' ? 'เช่น ก้อง' : 'เช่น ครูวิ'}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  {selectedRole === 'STUDENT' ? 'รหัสนักเรียน (5 หลัก):' : 'รหัสประจำตัวครู (ถ้ามี):'}
+                </label>
+                <input
+                  type="text"
+                  maxLength={10}
+                  value={studentId}
+                  onChange={(e) => setStudentId(e.target.value)}
+                  placeholder={selectedRole === 'STUDENT' ? 'เช่น 45892' : 'เช่น T-102 หรือเว้นว่าง'}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">
+                {selectedRole === 'STUDENT' ? 'ระดับชั้น / ห้องเรียน *:' : 'กลุ่มสาระการเรียนรู้ / ฝ่ายงาน *:'}
+              </label>
+              <input
+                type="text"
+                required
+                value={gradeRoom}
+                onChange={(e) => setGradeRoom(e.target.value)}
+                placeholder={selectedRole === 'STUDENT' ? 'เช่น ม.5/2, ม.1/3, ม.6/1' : 'เช่น กลุ่มสาระวิทยาศาสตร์, ฝ่ายวิชาการ, ธุรการ'}
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">
+                เบอร์โทรศัพท์ติดต่อ <span className="text-red-500">*</span>:
+              </label>
+              <input
+                type="tel"
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="089-123-4567"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:bg-white focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">
+                บัญชีพร้อมเพย์ (สำหรับรับเงินคืนกรณีของหมด/สลิปมีปัญหา):
+              </label>
+              <input
+                type="text"
+                value={promptPay}
+                onChange={(e) => setPromptPay(e.target.value)}
+                placeholder="เบอร์โทรหรือเลขบัตรประชาชน"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:bg-white focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 mt-2"
+            >
+              <span>{loading ? 'กำลังบันทึก...' : 'เสร็จสิ้น เริ่มสั่งอาหารเลย 🍱'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
