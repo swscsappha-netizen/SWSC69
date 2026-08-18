@@ -169,9 +169,16 @@ export default function LoginPage() {
               <h2 className="font-extrabold text-base text-slate-900">
                 {selectedRole === 'STUDENT' ? 'ข้อมูลนักเรียน สรรพวิทยาคม' : 'ข้อมูลครูและบุคลากร สรรพวิทยาคม'}
               </h2>
-              <p className="text-[11px] text-slate-500">
-                กรอกข้อมูลครั้งแรกเพื่อระบุตัวตนบนตั๋วรับอาหาร
-              </p>
+              {lineProfile.userId ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  เชื่อมต่อบัญชี LINE สำเร็จ ({lineProfile.name})
+                </span>
+              ) : (
+                <p className="text-[11px] text-slate-500">
+                  กรอกข้อมูลครั้งแรกเพื่อระบุตัวตนบนตั๋วรับอาหาร
+                </p>
+              )}
             </div>
 
             {/* Role Selection Tabs */}
