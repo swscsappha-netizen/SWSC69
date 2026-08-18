@@ -10,6 +10,8 @@ export interface LiffProfile {
   statusMessage?: string;
 }
 
+let isInitialized = false;
+
 /**
  * Initialize LINE LIFF SDK
  * - ถ้าอยู่ใน LINE App และยังไม่ได้ login → เรียก liff.login() อัตโนมัติ (redirect)

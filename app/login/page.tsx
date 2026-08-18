@@ -118,6 +118,7 @@ export default function LoginPage() {
         if (isSupabaseConfigured && supabase) {
           supabase.from('users').upsert({
             id: lineProfile.userId || `user_${Date.now()}`,
+            line_user_id: lineProfile.userId,
             name: fullName.trim() || lineProfile.name || 'ผู้ใช้งาน ส.ว.',
             nickname: nickname.trim(),
             student_id: studentId.trim(),
