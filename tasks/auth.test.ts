@@ -64,17 +64,14 @@ describe('2. LINE Receipt Flex Message Generation Tests', () => {
   });
 });
 
-describe('3. Strict Login-First Auth Guard & Logic Tests', () => {
+describe('3. LoadingAuthScreen & Seamless Auth Guard Tests', () => {
   const ADMIN_LINE_IDS = ['U203ff66b7e535c901dfbfa86d93eef46'];
 
-  function checkRouteAccess(pathname: string, isLoggedIn: boolean): { allowed: boolean; redirectTo?: string } {
-    if (pathname === '/login') {
-      return { allowed: true };
+  function resolveAuthViewState(isLoggedIn: boolean): { showLoadingScreen: boolean; showMainApp: boolean } {
+    if (!isLoggedIn) {
+      return { showLoadingScreen: true, showMainApp: false };
     }
-    if (isLoggedIn) {
-      return { allowed: true };
-    }
-    return { allowed: false, redirectTo: '/login' };
+    return { showLoadingScreen: false, showMainApp: true };
   }
 
   function resolveEffectiveRole(lineUserId?: string, selectedRole: string = 'STUDENT'): string {
@@ -84,46 +81,16 @@ describe('3. Strict Login-First Auth Guard & Logic Tests', () => {
     return selectedRole;
   }
 
-  it('should allow /login unconditionally even when logged out', () => {
-    const res = checkRouteAccess('/login', false);
-    assert.strictEqual(res.allowed, true);
-    assert.strictEqual(res.redirectTo, undefined);
+  it('should render LoadingAuthScreen when user is not authenticated yet', () => {
+    const view = resolveAuthViewState(false);
+    assert.strictEqual(view.showLoadingScreen, true);
+    assert.strictEqual(view.showMainApp, false);
   });
 
-  it('should redirect unauthenticated users on / to /login', () => {
-    const res = checkRouteAccess('/', false);
-    assert.strictEqual(res.allowed, false);
-    assert.strictEqual(res.redirectTo, '/login');
-  });
-
-  it('should allow / directly when user is logged in (returning user)', () => {
-    const res = checkRouteAccess('/', true);
-    assert.strictEqual(res.allowed, true);
-    assert.strictEqual(res.redirectTo, undefined);
-  });
-
-  it('should redirect unauthenticated users on /checkout to /login', () => {
-    const res = checkRouteAccess('/checkout', false);
-    assert.strictEqual(res.allowed, false);
-    assert.strictEqual(res.redirectTo, '/login');
-  });
-
-  it('should redirect unauthenticated users on /orders to /login', () => {
-    const res = checkRouteAccess('/orders', false);
-    assert.strictEqual(res.allowed, false);
-    assert.strictEqual(res.redirectTo, '/login');
-  });
-
-  it('should redirect unauthenticated users on /admin to /login', () => {
-    const res = checkRouteAccess('/admin', false);
-    assert.strictEqual(res.allowed, false);
-    assert.strictEqual(res.redirectTo, '/login');
-  });
-
-  it('should allow /orders when user is authenticated', () => {
-    const res = checkRouteAccess('/orders', true);
-    assert.strictEqual(res.allowed, true);
-    assert.strictEqual(res.redirectTo, undefined);
+  it('should reveal main app when user is authenticated (isLoggedIn: true)', () => {
+    const view = resolveAuthViewState(true);
+    assert.strictEqual(view.showLoadingScreen, false);
+    assert.strictEqual(view.showMainApp, true);
   });
 
   it('should automatically assign ADMIN role for authorized LINE Admin User ID', () => {

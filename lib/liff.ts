@@ -56,6 +56,12 @@ export async function initLiff(): Promise<{
     const isLoggedIn = liff.isLoggedIn();
 
     if (!isLoggedIn) {
+      // In external browser, automatically initiate LINE Login (SUANKHANOM pattern)
+      try {
+        liff.login();
+      } catch (loginErr) {
+        console.warn('liff.login automatic redirect error:', loginErr);
+      }
       return { success: false, isLoggedIn: false, isInClient };
     }
 

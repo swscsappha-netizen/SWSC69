@@ -1,24 +1,17 @@
 'use client';
 
 import React from 'react';
-import { usePathname } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
-import LoginPage from '@/app/login/page';
+import LoadingAuthScreen from '@/components/LoadingAuthScreen';
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const { currentUser } = useApp();
-  const pathname = usePathname();
 
-  // /login route explicitly requested
-  if (pathname === '/login') {
-    return <>{children}</>;
-  }
-
-  // If user is not authenticated, render LoginPage in-place with zero URL redirects
+  // If user is not authenticated yet (handshake in progress), show premium Loading Screen
   if (!currentUser.isLoggedIn) {
-    return <LoginPage />;
+    return <LoadingAuthScreen />;
   }
 
-  // Authenticated user gets full access to app with Navbar and BottomNav
+  // Once authenticated, render full application with Navbar, Market, and BottomNav
   return <>{children}</>;
 }
