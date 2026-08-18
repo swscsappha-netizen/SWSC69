@@ -29,7 +29,7 @@ export default function LoginPage() {
   });
 
   // Selected Role for onboarding
-  const [selectedRole, setSelectedRole] = useState<'STUDENT' | 'TEACHER'>('STUDENT');
+  const [selectedRole, setSelectedRole] = useState<'STUDENT' | 'TEACHER' | 'ADMIN'>('STUDENT');
 
   // Onboarding fields (Real User Info)
   const [fullName, setFullName] = useState('');
@@ -72,29 +72,67 @@ export default function LoginPage() {
           setFullName(res.profile.displayName);
           setNickname(res.profile.displayName.slice(0, 10));
 
-          // If Admin logs in via LINE LIFF, auto-login as ADMIN!
           if (isLineAdmin) {
-            updateUserProfile({
-              id: res.profile.userId,
-              name: res.profile.displayName,
-              nickname: 'แอดมิน',
-              studentId: 'ADMIN-01',
-              gradeRoom: 'ผู้ดูแลระบบโรงเรียน',
-              phone: '089-123-4567',
-              promptPayNumber: '0891234567',
-              role: 'ADMIN',
-              avatarUrl: res.profile.pictureUrl,
-              lineUserId: res.profile.userId,
-              isActive: true,
-              isLoggedIn: true,
-            });
-            showToast('success', 'ยินดีต้อนรับผู้ดูแลระบบ! 🛡️', `เข้าสู่ระบบในฐานะ Admin (${res.profile.displayName})`);
-            router.replace('/admin');
-            return;
+            setSelectedRole('ADMIN');
+            setGradeRoom('ผู้ดูแลระบบโรงเรียน');
+            setStudentId('ADMIN-01');
           }
 
-          // User ปกติ: LINE profile พร้อม → แสดงฟอร์มกรอกข้อมูล
-          setLiffReady(true);
+          // Check if this user already registered in Supabase
+          import('@/lib/supabase').then(async ({ supabase, isSupabaseConfigured }) => {
+            if (isSupabaseConfigured && supabase && res.profile?.userId) {
+              try {
+                const { data: existingUser } = await supabase
+                  .from('users')
+                  .select('*')
+                  .or(`line_user_id.eq.${res.profile.userId},id.eq.${res.profile.userId}`)
+                  .maybeSingle();
+
+                if (existingUser && existingUser.nickname) {
+                  // User already registered -> Auto-login with saved profile!
+                  const effectiveRole = isLineAdmin ? 'ADMIN' : (existingUser.role || 'STUDENT');
+                  updateUserProfile({
+                    id: existingUser.id,
+                    name: existingUser.name || res.profile.displayName,
+                    nickname: existingUser.nickname,
+                    studentId: existingUser.student_id || '',
+                    gradeRoom: existingUser.grade_room || '',
+                    phone: existingUser.phone || '',
+                    promptPayNumber: existingUser.promptpay_number || '',
+                    promptPayRefund: existingUser.promptpay_refund || existingUser.promptpay_number || '',
+                    role: effectiveRole,
+                    shopId: existingUser.shop_id,
+                    avatarUrl: res.profile.pictureUrl || existingUser.avatar_url,
+                    lineUserId: res.profile.userId,
+                    isActive: existingUser.is_active !== false,
+                    isLoggedIn: true,
+                  });
+
+                  showToast(
+                    'success',
+                    `ยินดีต้อนรับกลับ ${existingUser.nickname || existingUser.name}! 👋`,
+                    `เข้าสู่ระบบในฐานะ ${effectiveRole}`
+                  );
+
+                  if (effectiveRole === 'ADMIN') {
+                    router.replace('/admin');
+                  } else if (effectiveRole === 'MERCHANT') {
+                    router.replace('/merchant');
+                  } else {
+                    router.replace('/');
+                  }
+                  return;
+                }
+              } catch (dbErr) {
+                console.warn('Check existing user err:', dbErr);
+              }
+            }
+
+            // New User (first time) -> Show Onboarding Form!
+            setLiffReady(true);
+          }).catch(() => {
+            setLiffReady(true);
+          });
         } else {
           // Login แล้วแต่ไม่มี profile (edge case) → แสดงฟอร์มโดยไม่มีรูป
           setLiffReady(true);
