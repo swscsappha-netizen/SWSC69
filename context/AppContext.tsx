@@ -730,6 +730,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('sappha_auth_user');
       localStorage.removeItem('sappha_is_logged_in');
     } catch (e) {}
+    import('@/lib/liff').then(({ logoutLiff }) => {
+      logoutLiff();
+    }).catch(() => {});
     setCurrentUser({
       ...initialUserProfile,
       isLoggedIn: false,

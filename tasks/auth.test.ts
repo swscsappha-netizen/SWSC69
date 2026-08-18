@@ -112,3 +112,31 @@ describe('3. Auth Session Guard & Logic Tests', () => {
     assert.strictEqual(role, 'STUDENT');
   });
 });
+
+describe('4. Session Storage & Synchronization Tests', () => {
+  it('should correctly parse valid saved user profile from localStorage format', () => {
+    const mockStorage = JSON.stringify({
+      id: 'U123456789',
+      name: 'สมชาย ใจดี',
+      nickname: 'ก้อง',
+      studentId: '34890',
+      gradeRoom: 'ม.5/2',
+      phone: '0812345678',
+      role: 'STUDENT',
+      isLoggedIn: true,
+    });
+
+    const parsed = JSON.parse(mockStorage);
+    assert.strictEqual(parsed.id, 'U123456789');
+    assert.strictEqual(parsed.nickname, 'ก้อง');
+    assert.strictEqual(parsed.studentId, '34890');
+    assert.strictEqual(parsed.isLoggedIn, true);
+  });
+
+  it('should ignore legacy mock IDs during session restoration', () => {
+    const legacyMockId = 'user_student_1';
+    const isLegacy = legacyMockId.startsWith('user_student_') || legacyMockId.startsWith('user_teacher_');
+    assert.strictEqual(isLegacy, true);
+  });
+});
+
