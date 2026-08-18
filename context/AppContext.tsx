@@ -345,30 +345,107 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         // 10. Fetch Users (for admin)
         supabase.from('users').select('*').order('created_at', { ascending: false }).then(({ data }) => {
           if (data) {
-            setUsers(
-              data.map((u: any) => ({
-                id: u.id,
-                name: u.name,
-                nickname: u.nickname || '',
-                studentId: u.student_id || '',
-                gradeRoom: u.grade_room || '',
-                phone: u.phone || '',
-                promptPayNumber: u.promptpay_number || '',
-                promptPayRefund: u.promptpay_refund || '',
-                role: u.role || 'STUDENT',
-                shopId: u.shop_id,
-                avatarUrl: u.avatar_url,
-                isActive: u.is_active,
-                lineUserId: u.line_user_id,
-                joinedAt: u.created_at,
-              }))
-            );
+            const fetchedUsers: UserProfile[] = data.map((u: any) => ({
+              id: u.id,
+              name: u.name,
+              nickname: u.nickname || '',
+              studentId: u.student_id || '',
+              gradeRoom: u.grade_room || '',
+              phone: u.phone || '',
+              promptPayNumber: u.promptpay_number || '',
+              promptPayRefund: u.promptpay_refund || '',
+              role: u.role || 'STUDENT',
+              shopId: u.shop_id,
+              avatarUrl: u.avatar_url,
+              isActive: u.is_active,
+              lineUserId: u.line_user_id,
+              joinedAt: u.created_at,
+            }));
+
+            // Check if active user is in the list; if not, sync to Supabase & append
+            try {
+              const savedAuth = localStorage.getItem('sappha_auth_user');
+              if (savedAuth) {
+                const parsed = JSON.parse(savedAuth);
+                if (parsed && parsed.id && parsed.isLoggedIn) {
+                  const alreadyInList = fetchedUsers.some((u) => u.id === parsed.id || (parsed.lineUserId && u.lineUserId === parsed.lineUserId));
+                  if (!alreadyInList) {
+                    fetchedUsers.unshift(parsed);
+                    supabase.from('users').upsert({
+                      id: parsed.id,
+                      line_user_id: parsed.lineUserId || parsed.id,
+                      name: parsed.name || 'ผู้ใช้งาน',
+                      nickname: parsed.nickname || '',
+                      student_id: parsed.studentId || '',
+                      grade_room: parsed.gradeRoom || '',
+                      phone: parsed.phone || '',
+                      promptpay_number: parsed.promptPayNumber || '',
+                      promptpay_refund: parsed.promptPayRefund || parsed.promptPayNumber || '',
+                      role: parsed.role || 'STUDENT',
+                      shop_id: parsed.shopId || null,
+                      avatar_url: parsed.avatarUrl || null,
+                      is_active: parsed.isActive !== false,
+                    }).then();
+                  }
+                }
+              }
+            } catch (e) {}
+
+            setUsers(fetchedUsers);
           }
         });
 
-        // Realtime Subscription on orders, reviews, shops, products
+        // Realtime Subscription on orders, reviews, shops, products, users
         const channel = supabase
           .channel('realtime-db-sync')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'users' },
+            (payload) => {
+              if (payload.eventType === 'INSERT') {
+                const newU: any = payload.new;
+                setUsers((prev) => [
+                  {
+                    id: newU.id,
+                    name: newU.name,
+                    nickname: newU.nickname || '',
+                    studentId: newU.student_id || '',
+                    gradeRoom: newU.grade_room || '',
+                    phone: newU.phone || '',
+                    promptPayNumber: newU.promptpay_number || '',
+                    promptPayRefund: newU.promptpay_refund || '',
+                    role: newU.role || 'STUDENT',
+                    shopId: newU.shop_id,
+                    avatarUrl: newU.avatar_url,
+                    isActive: newU.is_active,
+                    lineUserId: newU.line_user_id,
+                    joinedAt: newU.created_at,
+                  },
+                  ...prev.filter((u) => u.id !== newU.id),
+                ]);
+              } else if (payload.eventType === 'UPDATE') {
+                const updatedU: any = payload.new;
+                setUsers((prev) =>
+                  prev.map((u) =>
+                    u.id === updatedU.id
+                      ? {
+                          ...u,
+                          name: updatedU.name,
+                          nickname: updatedU.nickname || u.nickname,
+                          role: updatedU.role || u.role,
+                          isActive: updatedU.is_active,
+                          phone: updatedU.phone || u.phone,
+                          avatarUrl: updatedU.avatar_url || u.avatarUrl,
+                        }
+                      : u
+                  )
+                );
+              } else if (payload.eventType === 'DELETE') {
+                const oldU: any = payload.old;
+                setUsers((prev) => prev.filter((u) => u.id !== oldU.id));
+              }
+            }
+          )
           .on(
             'postgres_changes',
             { event: '*', schema: 'public', table: 'orders' },
@@ -579,11 +656,46 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateUserProfile = (profile: Partial<UserProfile>) => {
     setCurrentUser((prev) => {
-      const updated = { ...prev, ...profile, isLoggedIn: true };
+      const updated: UserProfile = { ...prev, ...profile, isLoggedIn: true };
       try {
         localStorage.setItem('sappha_auth_user', JSON.stringify(updated));
         localStorage.setItem('sappha_is_logged_in', 'true');
       } catch (e) {}
+
+      // 1. Sync & Upsert to Supabase
+      import('@/lib/supabase').then(({ supabase, isSupabaseConfigured }) => {
+        if (isSupabaseConfigured && supabase && updated.id) {
+          supabase
+            .from('users')
+            .upsert({
+              id: updated.id,
+              line_user_id: updated.lineUserId || updated.id,
+              name: updated.name || 'ผู้ใช้งาน',
+              nickname: updated.nickname || '',
+              student_id: updated.studentId || '',
+              grade_room: updated.gradeRoom || '',
+              phone: updated.phone || '',
+              promptpay_number: updated.promptPayNumber || '',
+              promptpay_refund: updated.promptPayRefund || updated.promptPayNumber || '',
+              role: updated.role || 'STUDENT',
+              shop_id: updated.shopId || null,
+              avatar_url: updated.avatarUrl || null,
+              is_active: updated.isActive !== false,
+            })
+            .then();
+        }
+      }).catch(() => {});
+
+      // 2. Also update users list in state
+      setUsers((prevUsers) => {
+        const exists = prevUsers.some((u) => u.id === updated.id);
+        if (exists) {
+          return prevUsers.map((u) => (u.id === updated.id ? { ...u, ...updated } : u));
+        } else {
+          return [updated, ...prevUsers];
+        }
+      });
+
       return updated;
     });
     showToast('success', 'บันทึกข้อมูลสำเร็จ', 'อัปเดตโปรไฟล์เรียบร้อยแล้ว');
