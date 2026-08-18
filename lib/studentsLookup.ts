@@ -1,4 +1,4 @@
-import studentsRaw from './studentsData.json';
+import studentsRaw from './studentsData.json' with { type: 'json' };
 
 export interface StudentInfo {
   studentId: string;

@@ -1,7 +1,7 @@
 'use client';
 
 import liff from '@line/liff';
-import { Order } from '@/types';
+import type { Order } from '../types';
 
 export interface LiffProfile {
   userId: string;
