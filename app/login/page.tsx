@@ -205,7 +205,17 @@ export default function LoginPage() {
               <span>{loading ? 'กำลังเชื่อมต่อ LINE...' : 'เข้าสู่ระบบด้วย LINE (LINE Login)'}</span>
             </button>
 
-            <div className="pt-2">
+            <div>
+              <button
+                type="button"
+                onClick={() => setStep('ONBOARDING')}
+                className="text-[11px] text-slate-500 hover:text-emerald-700 font-bold underline transition"
+              >
+                หรือกรอกข้อมูลเข้าสู่ระบบ / สมัครใช้งานโดยตรง →
+              </button>
+            </div>
+
+            <div className="pt-1">
               <p className="text-[11px] text-slate-400">
                 ระบบสั่งอาหารล่วงหน้า สำหรับนักเรียน ครู และบุคลากร ส.ว.
               </p>

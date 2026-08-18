@@ -59,9 +59,28 @@ export async function initLiff(): Promise<{ success: boolean; profile?: LiffProf
 /**
  * Trigger LINE Login redirect
  */
-export function loginWithLiff() {
-  if (typeof window !== 'undefined' && isInitialized && !liff.isLoggedIn()) {
-    liff.login();
+export async function loginWithLiff(): Promise<void> {
+  if (typeof window === 'undefined') return;
+
+  const liffId = process.env.NEXT_PUBLIC_LINE_LIFF_ID || '2011161264-4eQlRIAS';
+
+  try {
+    if (!isInitialized) {
+      await liff.init({ liffId });
+      isInitialized = true;
+    }
+
+    if (!liff.isLoggedIn()) {
+      liff.login({
+        redirectUri: window.location.origin + '/login',
+      });
+    }
+  } catch (error) {
+    console.error('LIFF login error:', error);
+    // Fallback direct LINE OAuth URL if SDK fails
+    const redirectUri = encodeURIComponent(window.location.origin + '/login');
+    const clientId = liffId.split('-')[0] || liffId;
+    window.location.href = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=profile%20openid&state=sappha_${Date.now()}`;
   }
 }
 
