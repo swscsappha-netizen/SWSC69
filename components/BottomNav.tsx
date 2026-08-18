@@ -10,6 +10,8 @@ export default function BottomNav() {
   const pathname = usePathname();
   const { cartTotalItems, orders, currentUser } = useApp();
 
+  if (pathname === '/login') return null;
+
   const activeOrdersCount = orders.filter(
     (o) => o.status !== 'COMPLETED' && o.status !== 'CANCELLED'
   ).length;

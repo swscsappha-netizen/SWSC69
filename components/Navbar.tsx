@@ -10,6 +10,8 @@ export default function Navbar() {
   const pathname = usePathname();
   const { currentUser, cartTotalItems, orders } = useApp();
 
+  if (pathname === '/login') return null;
+
   const activeOrdersCount = orders.filter(
     (o) => o.status !== 'COMPLETED' && o.status !== 'CANCELLED'
   ).length;
