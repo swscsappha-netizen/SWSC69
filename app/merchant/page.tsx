@@ -19,11 +19,14 @@ import {
   Eye,
   Power,
   ChevronRight,
+  ShieldCheck,
+  PlusCircle,
 } from 'lucide-react';
 
 export default function MerchantDashboardPage() {
   const { shops, orders, currentUser, toggleShopOpen, stalls, showToast } = useApp();
   const [selectedOrderForSlip, setSelectedOrderForSlip] = useState<Order | null>(null);
+  const [adminSelectedShopId, setAdminSelectedShopId] = useState<string>('');
 
   // Application form states for student role
   const [applyShopName, setApplyShopName] = useState('');
@@ -45,7 +48,7 @@ export default function MerchantDashboardPage() {
     );
   };
 
-  // If student visits /merchant, show the Shop Application Form
+  // If student (and not admin), show the Shop Application Form
   if (currentUser.role === 'STUDENT') {
     return (
       <div className="max-w-2xl mx-auto px-4 py-10 space-y-6">
@@ -190,12 +193,54 @@ export default function MerchantDashboardPage() {
     );
   }
 
-  // Get current merchant's shop (e.g. shop_1: ป้าณี)
-  const currentShopId = currentUser.shopId || 'shop_1';
-  const shop = shops.find((s) => s.id === currentShopId) || shops[0];
+  // If no shops exist yet in the system
+  if (shops.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-16 text-center space-y-6">
+        <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-emerald-100 to-teal-50 text-emerald-600 flex items-center justify-center text-4xl shadow-glow border border-emerald-200">
+          🏪
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-black text-slate-900">ยังไม่มีร้านค้าในระบบ</h1>
+          <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+            {currentUser.role === 'ADMIN'
+              ? 'คุณกำลังเข้าใช้งานในฐานะผู้ดูแลระบบ (Admin) สามารถเพิ่มร้านค้าแรกของโรงเรียนได้จากหน้าแอดมิน'
+              : 'ยังไม่มีร้านค้าเปิดรับออเดอร์ในขณะนี้ คุณสามารถยื่นขอเปิดร้านค้าเพื่อเริ่มจำหน่ายอาหารได้'}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          {currentUser.role === 'ADMIN' ? (
+            <Link
+              href="/admin"
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs sm:text-sm rounded-2xl shadow-lg shadow-blue-600/25 transition-all inline-flex items-center gap-2"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>ไปที่หน้าจัดการร้านค้า (แอดมิน)</span>
+            </Link>
+          ) : (
+            <Link
+              href="/merchant/register"
+              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm rounded-2xl shadow-lg shadow-emerald-600/25 transition-all inline-flex items-center gap-2"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>+ ยื่นขอเปิดร้านค้าใหม่</span>
+            </Link>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Get active shop
+  const activeShopId =
+    currentUser.role === 'ADMIN'
+      ? adminSelectedShopId || currentUser.shopId || shops[0]?.id
+      : currentUser.shopId || shops.find((s) => s.ownerName === currentUser.name || s.phone === currentUser.phone)?.id || shops[0]?.id;
+
+  const shop = shops.find((s) => s.id === activeShopId) || shops[0];
 
   // Filter orders for this shop
-  const shopOrders = orders.filter((o) => o.shopId === shop.id);
+  const shopOrders = orders.filter((o) => o.shopId === shop?.id);
   const pendingSlipOrders = shopOrders.filter((o) => o.status === 'PENDING_APPROVAL');
   const confirmedOrders = shopOrders.filter((o) => o.status === 'CONFIRMED' || o.status === 'READY');
   const completedOrders = shopOrders.filter((o) => o.status === 'COMPLETED');
@@ -211,27 +256,52 @@ export default function MerchantDashboardPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       
+      {/* Admin Shop Switcher Bar (If user is Admin & there are multiple shops) */}
+      {currentUser.role === 'ADMIN' && shops.length > 1 && (
+        <div className="p-4 bg-blue-50 rounded-2xl border border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-blue-900 font-bold">
+            <ShieldCheck className="w-4 h-4 text-blue-600" />
+            <span>โหมดแอดมิน: เลือกร้านค้าที่จะเข้าดูหลังบ้าน</span>
+          </div>
+          <select
+            value={shop?.id}
+            onChange={(e) => setAdminSelectedShopId(e.target.value)}
+            className="p-2 bg-white border border-blue-300 rounded-xl font-bold text-slate-800 text-xs focus:ring-2 focus:ring-blue-500"
+          >
+            {shops.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({s.stallName})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Top Shop Control Banner */}
       <div className="bg-gradient-to-r from-emerald-700 via-emerald-800 to-slate-900 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md p-1 border border-white/20 shrink-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={shop.imageUrl} alt={shop.name} className="w-full h-full object-cover rounded-xl" />
+          <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md p-1 border border-white/20 shrink-0 overflow-hidden flex items-center justify-center">
+            {shop?.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={shop.imageUrl} alt={shop.name} className="w-full h-full object-cover rounded-xl" />
+            ) : (
+              <Store className="w-8 h-8 text-white" />
+            )}
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-400 text-slate-950">
-                {shop.stallName}
+                {shop?.stallName || 'ล็อกโรงอาหาร'}
               </span>
               <span className="text-xs text-emerald-200">
-                เวลาปิดรับ: {shop.cutoffTime} น.
+                เวลาปิดรับ: {shop?.cutoffTime || '20:00'} น.
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight mt-1">
-              {shop.name}
+              {shop?.name || 'ร้านค้าของฉัน'}
             </h1>
             <p className="text-xs text-emerald-200">
-              เจ้าของร้าน: {shop.ownerName} • พร้อมเพย์: {shop.promptPayNo}
+              เจ้าของร้าน: {shop?.ownerName} • พร้อมเพย์: {shop?.promptPayNo}
             </p>
           </div>
         </div>
@@ -241,195 +311,124 @@ export default function MerchantDashboardPage() {
           <div>
             <div className="text-xs text-slate-300 font-medium">สถานะเปิดรับออเดอร์</div>
             <div className="text-sm font-bold text-white">
-              {shop.isOpen ? 'เปิดรับออเดอร์ปกติ 🟢' : 'ปิดรับชั่วคราว 🔴'}
+              {shop?.isOpen ? 'เปิดรับออเดอร์ปกติ 🟢' : 'ปิดรับชั่วคราว 🔴'}
             </div>
           </div>
-          <button
-            onClick={() => toggleShopOpen(shop.id)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-md ${
-              shop.isOpen
-                ? 'bg-red-500 hover:bg-red-600 text-white'
-                : 'bg-emerald-500 hover:bg-emerald-600 text-white'
-            }`}
-          >
-            <Power className="w-4 h-4" />
-            <span>{shop.isOpen ? 'กดเพื่อปิดร้าน' : 'กดเพื่อเปิดร้าน'}</span>
-          </button>
+          {shop && (
+            <button
+              onClick={() => toggleShopOpen(shop.id)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-md ${
+                shop.isOpen
+                  ? 'bg-red-500 hover:bg-red-600 text-white'
+                  : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+              }`}
+            >
+              <Power className="w-4 h-4" />
+              <span>{shop.isOpen ? 'กดเพื่อปิดร้าน' : 'กดเพื่อเปิดร้าน'}</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Quick Action Navigation Buttons */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Button 1: Kitchen Prep Sheet */}
-        <Link
-          href="/merchant/prep-sheet"
-          className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-card hover:-translate-y-0.5 transition-all flex items-center justify-between group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-orange-100 text-brand-600 flex items-center justify-center font-bold">
-              <FileSpreadsheet className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="font-extrabold text-slate-900 text-sm sm:text-base group-hover:text-brand-600 transition-colors">
-                Kitchen Prep Sheet
-              </div>
-              <p className="text-xs text-slate-500">สรุปยอดที่ต้องปรุงตอนเช้า & พิมพ์</p>
-            </div>
+      {/* Metric Cards Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-1">
+          <div className="text-slate-500 font-medium flex items-center gap-1">
+            <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+            ยอดขายรอบเช้าวันพรุ่งนี้
           </div>
-          <ChevronRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 transition-transform" />
-        </Link>
+          <div className="text-2xl font-black text-emerald-600">฿{totalTomorrowSales}</div>
+        </div>
 
-        {/* Button 2: Quick Pickup Lookup */}
-        <Link
-          href="/merchant/orders"
-          className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-card hover:-translate-y-0.5 transition-all flex items-center justify-between group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold">
-              <QrCode className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="font-extrabold text-slate-900 text-sm sm:text-base group-hover:text-emerald-600 transition-colors">
-                ค้นหารหัสรับของ 4 หลัก
-              </div>
-              <p className="text-xs text-slate-500">ยิง QR หรือกรอกรหัสตัดรับของ</p>
-            </div>
+        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-1">
+          <div className="text-slate-500 font-medium flex items-center gap-1">
+            <Utensils className="w-3.5 h-3.5 text-brand-600" />
+            จำนวนจาน/แก้วที่ต้องทำ
           </div>
-          <ChevronRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 transition-transform" />
-        </Link>
+          <div className="text-2xl font-black text-brand-600">{totalTomorrowDishes} ที่</div>
+        </div>
 
-        {/* Button 3: Menu & Quota Manager */}
+        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-1">
+          <div className="text-slate-500 font-medium flex items-center gap-1">
+            <Clock className="w-3.5 h-3.5 text-amber-600" />
+            รอตรวจสอบสลิป
+          </div>
+          <div className="text-2xl font-black text-amber-600">{pendingSlipOrders.length} ออเดอร์</div>
+        </div>
+
+        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-1">
+          <div className="text-slate-500 font-medium flex items-center gap-1">
+            <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+            เตรียมปรุงอาหาร
+          </div>
+          <div className="text-2xl font-black text-blue-600">{confirmedOrders.length} ออเดอร์</div>
+        </div>
+      </div>
+
+      {/* Quick Navigation Action Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Link
           href="/merchant/menu"
-          className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-card hover:-translate-y-0.5 transition-all flex items-center justify-between group"
+          className="p-5 bg-white hover:bg-slate-50 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between group transition-all"
         >
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
-              <Utensils className="w-6 h-6" />
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-orange-100 text-brand-600 flex items-center justify-center font-bold">
+              <Utensils className="w-5 h-5" />
             </div>
             <div>
-              <div className="font-extrabold text-slate-900 text-sm sm:text-base group-hover:text-blue-600 transition-colors">
-                จัดการเมนู & โควตา
+              <div className="font-extrabold text-sm text-slate-900 group-hover:text-brand-600 transition-colors">
+                จัดการเมนูอาหาร & โควตา
               </div>
-              <p className="text-xs text-slate-500">ปรับราคา สต็อกรายวัน และเวลาปิดรอบ</p>
+              <div className="text-slate-500 text-xs mt-0.5">เพิ่ม ลด ปรับราคา และกำหนดจำนวนจาน</div>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 transition-transform" />
+        </Link>
+
+        <Link
+          href="/merchant/prep"
+          className="p-5 bg-white hover:bg-slate-50 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between group transition-all"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold">
+              <FileSpreadsheet className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-extrabold text-sm text-slate-900 group-hover:text-emerald-600 transition-colors">
+                ใบสรุปยอดเตรียมอาหารเช้า
+              </div>
+              <div className="text-slate-500 text-xs mt-0.5">พิมพ์ Kitchen Prep Sheet สำหรับแม่ครัว</div>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 transition-transform" />
+        </Link>
+
+        <Link
+          href="/merchant/settings"
+          className="p-5 bg-white hover:bg-slate-50 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between group transition-all"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+              <Store className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-extrabold text-sm text-slate-900 group-hover:text-blue-600 transition-colors">
+                ตั้งค่าร้าน & พร้อมเพย์
+              </div>
+              <div className="text-slate-500 text-xs mt-0.5">แก้ไขเวลาปิดรับ, รูปหน้าร้าน, เบอร์บัญชี</div>
             </div>
           </div>
           <ChevronRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 transition-transform" />
         </Link>
       </div>
 
-      {/* KPI Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-sm">
-          <div className="text-xs text-slate-500 font-medium">ยอดสั่งรอบเช้าพรุ่งนี้</div>
-          <div className="text-xl sm:text-2xl font-black text-brand-600 mt-1">
-            ฿{totalTomorrowSales}
-          </div>
-          <div className="text-[11px] text-emerald-600 font-semibold mt-1">
-            {shopOrders.length} ออเดอร์ทั้งหมด
-          </div>
-        </div>
-
-        <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-sm">
-          <div className="text-xs text-slate-500 font-medium">จำนวนจาน/กล่องที่ต้องทำ</div>
-          <div className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
-            {totalTomorrowDishes} <span className="text-sm font-bold text-slate-500">จาน</span>
-          </div>
-          <div className="text-[11px] text-slate-500 mt-1">เช้า 06:45 - 07:45 น.</div>
-        </div>
-
-        <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-sm">
-          <div className="text-xs text-slate-500 font-medium">สลิปที่รอตรวจสอบ</div>
-          <div className="text-xl sm:text-2xl font-black text-amber-500 mt-1">
-            {pendingSlipOrders.length} <span className="text-sm font-bold text-slate-500">รายการ</span>
-          </div>
-          <div className="text-[11px] text-amber-600 font-semibold mt-1">ต้องตรวจก่อนเริ่มทำ</div>
-        </div>
-
-        <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-sm">
-          <div className="text-xs text-slate-500 font-medium">ส่งมอบเรียบร้อยแล้ว</div>
-          <div className="text-xl sm:text-2xl font-black text-emerald-600 mt-1">
-            {completedOrders.length} <span className="text-sm font-bold text-slate-500">ออเดอร์</span>
-          </div>
-          <div className="text-[11px] text-slate-500 mt-1">นักเรียนรับแล้ว</div>
-        </div>
-      </div>
-
-      {/* Section: Pending Slips Review Table / List */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden space-y-4 p-5 sm:p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
-              <Clock className="w-4 h-4" />
-            </div>
-            <h2 className="text-base sm:text-lg font-extrabold text-slate-900">
-              รายการที่รอแม่ค้าตรวจสอบสลิป ({pendingSlipOrders.length} รายการ)
-            </h2>
-          </div>
-          <span className="text-xs font-semibold text-slate-400">
-            โอนผ่าน PromptPay
-          </span>
-        </div>
-
-        {pendingSlipOrders.length === 0 ? (
-          <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-500 text-xs">
-            <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-            <div className="font-bold text-slate-700">ไม่มีสลิปค้างตรวจในขณะนี้</div>
-            <p>ทุกออเดอร์ได้รับการตรวจสอบและยืนยันเรียบร้อยแล้ว</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {pendingSlipOrders.map((order) => (
-              <div
-                key={order.id}
-                className="p-4 rounded-2xl border border-amber-200 bg-amber-50/40 space-y-3 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-extrabold text-sm text-slate-900">
-                      #{order.orderCode} ({order.pickupCode4Digits})
-                    </span>
-                    <span className="text-base font-black text-brand-600">
-                      ฿{order.subtotal}
-                    </span>
-                  </div>
-                  <div className="text-xs text-slate-600 mt-1">
-                    ผู้สั่ง: <strong>{order.userName} ({order.userNickname})</strong> {order.userGradeRoom}
-                  </div>
-                  <div className="text-[11px] text-slate-500 mt-1 space-y-0.5">
-                    {order.items.map((it, i) => (
-                      <div key={i}>
-                        • {it.productName} (x{it.quantity})
-                        {it.specialInstructions && ` [หมายเหตุ: ${it.specialInstructions}]`}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-amber-200/60 flex items-center justify-between gap-2">
-                  <span className="text-[11px] text-slate-400">
-                    แนบเมื่อ {new Date(order.paymentSlip?.uploadedAt || Date.now()).toLocaleTimeString('th-TH')} น.
-                  </span>
-
-                  <button
-                    onClick={() => setSelectedOrderForSlip(order)}
-                    className="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-1.5 transition-all"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>ตรวจสลิป & อนุมัติ</span>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Slip Modal Popup */}
-      <SlipModal
-        order={selectedOrderForSlip}
-        onClose={() => setSelectedOrderForSlip(null)}
-      />
+      {/* Slip Modal Component */}
+      {selectedOrderForSlip && (
+        <SlipModal
+          order={selectedOrderForSlip}
+          onClose={() => setSelectedOrderForSlip(null)}
+        />
+      )}
     </div>
   );
 }
