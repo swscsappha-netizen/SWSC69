@@ -222,6 +222,38 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   localStorage.setItem('sappha_auth_user', JSON.stringify(userObj));
                   localStorage.setItem('sappha_is_logged_in', 'true');
                 } catch (e) {}
+              } else {
+                // New user - auto create in Supabase (SUANKHANOM pattern)
+                const effectiveRole = isAdmin ? 'ADMIN' : 'STUDENT';
+                const newObj: UserProfile = {
+                  id: res.profile.userId,
+                  name: res.profile.displayName,
+                  nickname: '',
+                  studentId: '',
+                  gradeRoom: '',
+                  phone: '',
+                  promptPayNumber: '',
+                  promptPayRefund: '',
+                  role: effectiveRole,
+                  avatarUrl: res.profile.pictureUrl,
+                  lineUserId: res.profile.userId,
+                  isActive: true,
+                  isLoggedIn: true,
+                };
+                setCurrentUser(newObj);
+                try {
+                  localStorage.setItem('sappha_auth_user', JSON.stringify(newObj));
+                  localStorage.setItem('sappha_is_logged_in', 'true');
+                } catch (e) {}
+
+                supabase.from('users').upsert({
+                  id: res.profile.userId,
+                  line_user_id: res.profile.userId,
+                  name: res.profile.displayName,
+                  role: effectiveRole,
+                  avatar_url: res.profile.pictureUrl,
+                  is_active: true,
+                }).then();
               }
             } catch (err) {
               console.warn('Silent LIFF sync error:', err);

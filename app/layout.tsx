@@ -6,6 +6,7 @@ import BottomNav from '@/components/BottomNav';
 import AuthGuard from '@/components/AuthGuard';
 import ToastContainer from '@/components/ToastContainer';
 import FloatingCartBar from '@/components/FloatingCartBar';
+import StudentOnboardingModal from '@/components/StudentOnboardingModal';
 
 export const metadata: Metadata = {
   title: 'Sappha PreOrder | เว็บสั่งอาหารล่วงหน้า โรงเรียนสรรพวิทยาคม',
@@ -33,6 +34,9 @@ export default function RootLayout({
 
             {/* Mobile Bottom Navigation */}
             <BottomNav />
+
+            {/* Student Onboarding Popup for new users */}
+            <StudentOnboardingModal />
 
             {/* Toasts */}
             <ToastContainer />
