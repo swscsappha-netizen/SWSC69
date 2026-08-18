@@ -38,6 +38,7 @@ export default function LoginPage() {
   const [gradeRoom, setGradeRoom] = useState('ม.5/2');
   const [phone, setPhone] = useState('');
   const [promptPay, setPromptPay] = useState('');
+  const [isLockedByDatabase, setIsLockedByDatabase] = useState(false);
 
   const runLiffInit = useCallback(() => {
     setLiffError(null);
@@ -348,13 +349,18 @@ export default function LoginPage() {
                         if (res.found && res.student) {
                           setFullName(res.student.fullName);
                           setGradeRoom(res.student.gradeRoom);
+                          setIsLockedByDatabase(true);
                           showToast(
                             'success',
                             'พบข้อมูลนักเรียน! 🎓',
                             `${res.student.fullName} (${res.student.gradeRoom}) เลขที่ ${res.student.studentNumber}`
                           );
+                        } else {
+                          setIsLockedByDatabase(false);
                         }
                       });
+                    } else {
+                      setIsLockedByDatabase(false);
                     }
                   }}
                   placeholder="เช่น 34890 หรือ 31774"
@@ -363,10 +369,13 @@ export default function LoginPage() {
                 
                 {fullName && gradeRoom && (
                   <div className="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 font-bold text-[11px] animate-in fade-in slide-in-from-top-1">
-                    <span className="text-sm">✅</span>
+                    <span className="text-sm">🔒</span>
                     <div className="flex-1 truncate">
                       <span className="font-extrabold">{fullName}</span> ({gradeRoom})
                     </div>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md font-extrabold">
+                      ฐานข้อมูลทางการ
+                    </span>
                   </div>
                 )}
               </div>
@@ -389,12 +398,18 @@ export default function LoginPage() {
             {/* Name & Grade Room Details */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  ชื่อ - นามสกุลจริง <span className="text-red-500">*</span>:
+                <label className="font-bold text-slate-700 block mb-1 flex items-center justify-between">
+                  <span>ชื่อ - นามสกุลจริง <span className="text-red-500">*</span>:</span>
+                  {selectedRole === 'STUDENT' && isLockedByDatabase && (
+                    <span className="text-[10px] text-slate-500 font-bold flex items-center gap-0.5">
+                      🔒 ล็อค
+                    </span>
+                  )}
                 </label>
                 <input
                   type="text"
                   required
+                  readOnly={selectedRole === 'STUDENT' && isLockedByDatabase}
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="เช่น นายสมชาย ใจดี"

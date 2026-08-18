@@ -17,6 +17,19 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState(currentUser.avatarUrl || '');
   const [saving, setSaving] = useState(false);
   const [changed, setChanged] = useState(false);
+  const [isLockedByDatabase, setIsLockedByDatabase] = useState(false);
+
+  // Check if studentId is in official database on mount or change
+  useEffect(() => {
+    if (currentUser.studentId && currentUser.studentId.length >= 4) {
+      import('@/lib/studentsLookup').then(({ findStudentById }) => {
+        const res = findStudentById(currentUser.studentId || '');
+        if (res.found) {
+          setIsLockedByDatabase(true);
+        }
+      });
+    }
+  }, [currentUser.studentId]);
 
   // Reset form if user switches role
   useEffect(() => {
@@ -134,15 +147,25 @@ export default function ProfilePage() {
           {/* Name */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block font-bold text-slate-700 mb-1.5">
-                ชื่อ-นามสกุลจริง <span className="text-red-500">*</span>
+              <label className="block font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                <span>ชื่อ-นามสกุลจริง <span className="text-red-500">*</span></span>
+                {isLockedByDatabase && (
+                  <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold border border-emerald-200">
+                    🔒 ทะเบียนทางการ
+                  </span>
+                )}
               </label>
               <input
                 type="text"
                 required
+                readOnly={isLockedByDatabase}
                 value={name}
                 onChange={(e) => { setName(e.target.value); markChanged(); }}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-brand-400 focus:border-brand-400 transition font-medium"
+                className={`w-full p-3 border rounded-2xl transition font-medium ${
+                  isLockedByDatabase
+                    ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed border-slate-300'
+                    : 'bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-brand-400 focus:border-brand-400'
+                }`}
                 placeholder="เช่น นายสมชาย ใจดี"
               />
             </div>
@@ -164,15 +187,27 @@ export default function ProfilePage() {
           {/* Grade & Student ID */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1">
-                <BookOpen className="w-3 h-3 text-slate-500" />
-                ระดับชั้น / ห้อง / ตำแหน่ง
+              <label className="block font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                <span className="flex items-center gap-1">
+                  <BookOpen className="w-3 h-3 text-slate-500" />
+                  ระดับชั้น / ห้อง / ตำแหน่ง
+                </span>
+                {isLockedByDatabase && (
+                  <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold border border-emerald-200">
+                    🔒 ล็อค
+                  </span>
+                )}
               </label>
               <input
                 type="text"
+                readOnly={isLockedByDatabase}
                 value={gradeRoom}
                 onChange={(e) => { setGradeRoom(e.target.value); markChanged(); }}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-brand-400 focus:border-brand-400 transition"
+                className={`w-full p-3 border rounded-2xl transition ${
+                  isLockedByDatabase
+                    ? 'bg-slate-100/90 text-slate-700 cursor-not-allowed border-slate-300 font-bold'
+                    : 'bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-brand-400 focus:border-brand-400'
+                }`}
                 placeholder="เช่น ม.5/2 หรือ ครู/บุคลากร"
               />
             </div>
@@ -194,13 +229,18 @@ export default function ProfilePage() {
                       if (res.found && res.student) {
                         setName(res.student.fullName);
                         setGradeRoom(res.student.gradeRoom);
+                        setIsLockedByDatabase(true);
                         showToast(
                           'success',
                           'พบข้อมูลนักเรียน! 🎓',
                           `${res.student.fullName} (${res.student.gradeRoom})`
                         );
+                      } else {
+                        setIsLockedByDatabase(false);
                       }
                     });
+                  } else {
+                    setIsLockedByDatabase(false);
                   }
                 }}
                 className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-brand-400 focus:border-brand-400 transition font-mono font-bold tracking-widest"
