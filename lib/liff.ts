@@ -12,18 +12,23 @@ export interface LiffProfile {
 
 let isInitialized = false;
 
+function getCleanLiffId(): string {
+  const raw = process.env.NEXT_PUBLIC_LINE_LIFF_ID || '2011161264-4eQlRIAS';
+  return raw.trim().replace(/[\r\n\t\s]/g, '');
+}
+
 /**
  * Initialize LINE LIFF SDK
  * - ถ้าอยู่ใน LINE App และยังไม่ได้ login → เรียก liff.login() อัตโนมัติ (redirect)
  * - ถ้าอยู่ใน browser ปกติและยังไม่ได้ login → เรียก liff.login() เพื่อ OAuth flow
  * - ถ้า login แล้ว → ดึง profile มาเลย
  */
-export async function initLiff(): Promise<{ success: boolean; profile?: LiffProfile; isInClient: boolean }> {
+export async function initLiff(): Promise<{ success: boolean; profile?: LiffProfile; isInClient: boolean; error?: string }> {
   if (typeof window === 'undefined') {
     return { success: false, isInClient: false };
   }
 
-  const liffId = process.env.NEXT_PUBLIC_LINE_LIFF_ID || '2011161264-4eQlRIAS';
+  const liffId = getCleanLiffId();
 
   try {
     if (!isInitialized) {
@@ -53,14 +58,14 @@ export async function initLiff(): Promise<{ success: boolean; profile?: LiffProf
           statusMessage: profile.statusMessage,
         },
       };
-    } catch (profileErr) {
+    } catch (profileErr: any) {
       console.warn('Failed to get LIFF profile:', profileErr);
     }
 
     return { success: true, isInClient };
-  } catch (error) {
+  } catch (error: any) {
     console.warn('LIFF Initialization Warning:', error);
-    return { success: false, isInClient: false };
+    return { success: false, isInClient: false, error: error?.message || 'LIFF Init Failed' };
   }
 }
 
@@ -70,7 +75,7 @@ export async function initLiff(): Promise<{ success: boolean; profile?: LiffProf
 export async function loginWithLiff(): Promise<void> {
   if (typeof window === 'undefined') return;
 
-  const liffId = process.env.NEXT_PUBLIC_LINE_LIFF_ID || '2011161264-4eQlRIAS';
+  const liffId = getCleanLiffId();
 
   try {
     if (!isInitialized) {
