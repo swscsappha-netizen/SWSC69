@@ -12,9 +12,22 @@ export interface LiffProfile {
 
 let isInitialized = false;
 
-function getCleanLiffId(): string {
+export function getCleanLiffId(): string {
   const raw = process.env.NEXT_PUBLIC_LINE_LIFF_ID || '2011161264-4eQlRIAS';
   return raw.trim().replace(/[\r\n\t\s]/g, '');
+}
+
+/**
+ * Generate official LINE LIFF Deep Link URL for Flex Messages
+ * Format: https://liff.line.me/{LIFF_ID}/{path}
+ */
+export function getLiffAppUrl(path: string = '/orders'): string {
+  const liffId = getCleanLiffId();
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  if (liffId) {
+    return `https://liff.line.me/${liffId}${cleanPath}`;
+  }
+  return `https://swsc69.vercel.app${cleanPath}`;
 }
 
 /**
@@ -358,8 +371,8 @@ export function createReceiptFlexMessage(order: Order) {
             height: 'sm',
             action: {
               type: 'uri',
-              label: 'เปิดดูตั๋ว & QR Code ในเว็บ',
-              uri: `${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/orders`,
+              label: '🎟️ เปิดดูตั๋ว & รหัสรับของใน LINE',
+              uri: getLiffAppUrl('/orders'),
             },
           },
         ],

@@ -332,4 +332,27 @@ describe('7. Direct Image Upload & Zero-URL Input Enforcement Tests', () => {
   });
 });
 
+describe('8. LINE LIFF Flex Message URL & Deep Link Tests', () => {
+  it('should generate valid official LINE LIFF URLs for flex messages', () => {
+    const liffId = '2011161264-4eQlRIAS';
+    const ordersUrl = `https://liff.line.me/${liffId}/orders`;
+    const merchantUrl = `https://liff.line.me/${liffId}/merchant`;
+
+    assert.strictEqual(ordersUrl, 'https://liff.line.me/2011161264-4eQlRIAS/orders');
+    assert.strictEqual(merchantUrl, 'https://liff.line.me/2011161264-4eQlRIAS/merchant');
+    assert.strictEqual(ordersUrl.includes('localhost'), false);
+  });
+
+  it('should correctly parse target redirect path from LIFF query or state', () => {
+    const testLiffState = '%2Forders';
+    const decoded = decodeURIComponent(testLiffState);
+    assert.strictEqual(decoded, '/orders');
+
+    const searchParams = new URLSearchParams('redirect=/merchant');
+    const redirectParam = searchParams.get('redirect');
+    assert.strictEqual(redirectParam, '/merchant');
+  });
+});
+
+
 

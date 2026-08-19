@@ -177,6 +177,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const waitTime = Math.max(0, minDisplayDuration - elapsed);
       setTimeout(() => {
         setIsAuthReady(true);
+
+        // Handle LINE LIFF Deep Linking from Flex Message buttons
+        if (typeof window !== 'undefined') {
+          try {
+            const url = new URL(window.location.href);
+            const redirectParam = url.searchParams.get('redirect') || url.searchParams.get('path');
+            const liffState = url.searchParams.get('liff.state');
+            let targetPath = redirectParam;
+            if (!targetPath && liffState) {
+              const decoded = decodeURIComponent(liffState);
+              if (decoded.startsWith('/')) {
+                targetPath = decoded;
+              }
+            }
+            if (targetPath && targetPath !== window.location.pathname && !targetPath.includes('//')) {
+              window.location.href = targetPath;
+            }
+          } catch (e) {}
+        }
       }, waitTime);
     };
 

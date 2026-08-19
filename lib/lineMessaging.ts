@@ -1,10 +1,20 @@
 import { Order } from '@/types';
 
 const LINE_CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN || '';
+const DEFAULT_LIFF_ID = process.env.NEXT_PUBLIC_LINE_LIFF_ID || '2011161264-4eQlRIAS';
 
 export const isLineMessagingConfigured = Boolean(
   LINE_CHANNEL_ACCESS_TOKEN && !LINE_CHANNEL_ACCESS_TOKEN.includes('placeholder')
 );
+
+/**
+ * Generate official LINE LIFF URL for Flex Messages
+ * Format: https://liff.line.me/{LIFF_ID}/{path}
+ */
+export function getLiffAppUrl(path: string = '/orders'): string {
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `https://liff.line.me/${DEFAULT_LIFF_ID.trim()}${cleanPath}`;
+}
 
 /**
  * Send Push Message via LINE Messaging API
@@ -215,7 +225,7 @@ export function buildNewOrderMerchantFlex(order: Order, appUrl: string = 'https:
             action: {
               type: 'uri',
               label: '🔎 ตรวจสลิป & จัดการออเดอร์',
-              uri: `${appUrl}/merchant`,
+              uri: getLiffAppUrl('/merchant'),
             },
           },
         ],
@@ -327,7 +337,7 @@ export function buildOrderConfirmedStudentFlex(order: Order, appUrl: string = 'h
             action: {
               type: 'uri',
               label: '🎟️ เปิดดูตั๋วรับอาหาร',
-              uri: `${appUrl}/orders`,
+              uri: getLiffAppUrl('/orders'),
             },
           },
         ],
@@ -417,7 +427,7 @@ export function buildOrderReadyStudentFlex(order: Order, appUrl: string = 'https
             action: {
               type: 'uri',
               label: '🎟️ เปิดตั๋วรับอาหารหน้าร้าน',
-              uri: `${appUrl}/orders`,
+              uri: getLiffAppUrl('/orders'),
             },
           },
         ],
@@ -502,7 +512,7 @@ export function buildOrderCancelledStudentFlex(
             action: {
               type: 'uri',
               label: 'ตรวจสอบรายละเอียดตั๋ว',
-              uri: `${appUrl}/orders`,
+              uri: getLiffAppUrl('/orders'),
             },
           },
         ],
