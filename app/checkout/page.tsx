@@ -83,21 +83,72 @@ export default function CheckoutPage() {
   const handleSlipUpload = async (shopId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const targetShop = shops.find((s) => s.id === shopId);
-      const shopName = targetShop?.name || 'ร้านค้าโรงอาหาร';
-      showToast('info', 'กำลังอัปโหลดสลิป...', `กำลังส่งสลิปไปยัง Google Drive: ${shopName}`);
-      const { uploadImage } = await import('@/lib/uploadHelper');
-      const timestamp = Date.now().toString().slice(-6);
-      const res = await uploadImage(file, `slip_${shopId.slice(0, 8)}_${timestamp}.jpg`, {
-        shopName,
-        category: 'สลิปชำระเงิน',
-        includeDate: true,
-      });
-      setSlips((prev) => ({
-        ...prev,
-        [shopId]: res.fileUrl,
-      }));
-      showToast('success', 'แนบสลิปเรียบร้อย 📄', res.message);
+      // 1. Read file as high-quality Base64 Data URL immediately
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const rawBase64 = event.target?.result as string;
+        if (!rawBase64) return;
+
+        // Compress and optimize image to ensure sharp resolution while staying under storage limit
+        try {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const maxDim = 1200;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+            const optimizedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+
+            setSlips((prev) => ({
+              ...prev,
+              [shopId]: optimizedBase64,
+            }));
+            showToast('success', 'แนบสลิปเรียบร้อย 📄', 'สลิปการโอนเงินจริงพร้อมส่งให้แม่ค้าตรวจสอบแล้ว');
+          };
+          img.src = rawBase64;
+        } catch {
+          setSlips((prev) => ({
+            ...prev,
+            [shopId]: rawBase64,
+          }));
+          showToast('success', 'แนบสลิปเรียบร้อย 📄', 'สลิปการโอนเงินจริงพร้อมส่งให้แม่ค้าตรวจสอบแล้ว');
+        }
+      };
+      reader.readAsDataURL(file);
+
+      // 2. Also try Google Drive upload in background if available
+      try {
+        const targetShop = shops.find((s) => s.id === shopId);
+        const shopName = targetShop?.name || 'ร้านค้าโรงอาหาร';
+        const { uploadImage } = await import('@/lib/uploadHelper');
+        const timestamp = Date.now().toString().slice(-6);
+        const res = await uploadImage(file, `slip_${shopId.slice(0, 8)}_${timestamp}.jpg`, {
+          shopName,
+          category: 'สลิปชำระเงิน',
+          includeDate: true,
+        });
+        if (res.success && res.fileUrl && res.fileUrl.startsWith('http')) {
+          setSlips((prev) => ({
+            ...prev,
+            [shopId]: res.fileUrl,
+          }));
+        }
+      } catch (err) {
+        console.warn('Background Drive upload fallback to Base64:', err);
+      }
     }
   };
 
@@ -106,6 +157,14 @@ export default function CheckoutPage() {
     if (!name.trim() || !nickname.trim() || !gradeRoom.trim() || !phone.trim()) {
       showToast('error', 'กรุณากรอกข้อมูลให้ครบ', 'โปรดตรวจสอบชื่อ ชั้นเรียน และเบอร์โทรศัพท์');
       return;
+    }
+
+    // Enforce real slip attachment for all shops
+    for (const g of shopGroups) {
+      if (!slips[g.shopId] || !slips[g.shopId].trim()) {
+        showToast('error', 'กรุณาแนบสลิปโอนเงิน 📄', `โปรดแนบสลิปการโอนเงินของร้าน "${g.shopName}" ก่อนกดยืนยันการสั่งซื้อ`);
+        return;
+      }
     }
 
     // Save profile updates
@@ -127,9 +186,7 @@ export default function CheckoutPage() {
       stallName: g.stallName,
       items: g.items,
       subtotal: g.subtotal,
-      slipUrl:
-        slips[g.shopId] ||
-        'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80',
+      slipUrl: slips[g.shopId],
     }));
 
     const created = createOrders(shopOrdersPayload);

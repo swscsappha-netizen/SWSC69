@@ -119,13 +119,19 @@ export default function SlipModal({ order, onClose }: SlipModalProps) {
                 </div>
 
                 <div className="relative w-full h-80 sm:h-96 rounded-2xl overflow-auto bg-slate-900 border border-slate-200 flex items-center justify-center p-2">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={order.paymentSlip.slipUrl}
-                    alt="Payment Slip"
-                    style={{ transform: `scale(${zoomLevel})` }}
-                    className="max-h-full object-contain transition-transform duration-200"
-                  />
+                  {order.paymentSlip?.slipUrl || order.slipUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={order.paymentSlip?.slipUrl || order.slipUrl}
+                      alt="Payment Slip"
+                      style={{ transform: `scale(${zoomLevel})` }}
+                      className="max-h-full object-contain transition-transform duration-200"
+                    />
+                  ) : (
+                    <div className="text-center text-slate-400 text-xs p-4">
+                      ⚠️ ไม่พบรูปภาพสลิปที่แนบมา
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
