@@ -160,6 +160,7 @@ export interface Order {
   userGradeRoom: string;
   userStudentId: string;
   userPhone: string;
+  userPromptPayRefund?: string;
   shopId: string;
   shopName: string;
   stallName: string;
@@ -169,6 +170,7 @@ export interface Order {
   subtotal: number;
   status: OrderStatus;
   createdAt: string;
+  slipUrl?: string;
   paymentSlip?: PaymentSlip;
   isUrgentLate?: boolean;
   reviewed?: boolean;

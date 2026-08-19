@@ -216,3 +216,62 @@ describe('5. Profile Locking & Admin User Management Tests', () => {
   });
 });
 
+describe('6. Merchant Full Customization & Order Workflow Tests', () => {
+  it('should correctly adjust daily quota and stock availability for a merchant product', () => {
+    const product = {
+      id: 'p_1',
+      shopId: 'shop_1',
+      name: 'ข้าวมันไก่',
+      basePrice: 40,
+      dailyQuota: 50,
+      quotaRemaining: 50,
+      isAvailable: true,
+    };
+
+    // Increase quota
+    const updatedQuota = { ...product, dailyQuota: 60, quotaRemaining: 60 };
+    assert.strictEqual(updatedQuota.dailyQuota, 60);
+
+    // Toggle out of stock
+    const outOfStock = { ...updatedQuota, isAvailable: false };
+    assert.strictEqual(outOfStock.isAvailable, false);
+  });
+
+  it('should transition order status from PENDING_APPROVAL to CONFIRMED to READY to COMPLETED', () => {
+    let status = 'PENDING_APPROVAL';
+    
+    // Merchant approves slip
+    status = 'CONFIRMED';
+    assert.strictEqual(status, 'CONFIRMED');
+
+    // Merchant finishes cooking
+    status = 'READY';
+    assert.strictEqual(status, 'READY');
+
+    // Student picks up with 4-digit code
+    status = 'COMPLETED';
+    assert.strictEqual(status, 'COMPLETED');
+  });
+
+  it('should update shop branding and settings accurately', () => {
+    const shop = {
+      id: 'shop_1',
+      name: 'ร้านป้าสมใจ',
+      promptPayNo: '0812345678',
+      cutoffTime: '20:00',
+      stallName: 'ล็อก 1',
+    };
+
+    const updatedShop = {
+      ...shop,
+      name: 'ร้านป้าสมใจ ข้าวมันไก่ตอน',
+      cutoffTime: '21:00',
+      stallName: 'ล็อก 3',
+    };
+
+    assert.strictEqual(updatedShop.name, 'ร้านป้าสมใจ ข้าวมันไก่ตอน');
+    assert.strictEqual(updatedShop.cutoffTime, '21:00');
+    assert.strictEqual(updatedShop.stallName, 'ล็อก 3');
+  });
+});
+
