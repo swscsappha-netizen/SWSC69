@@ -5,25 +5,26 @@
 @tailwind utilities;
 
 :root {
-  --dominos-blue: #10789f;
-  --dominos-red: #e3193b;
-  --dominos-red-hover: #cc1433;
-  --ink-primary: #333333;
-  --ink-muted: #858585;
-  --ink-light: #767676;
+  --primary-purple: #6d28d9;
+  --primary-purple-dark: #5b21b6;
+  --primary-yellow: #facc15;
+  --primary-yellow-hover: #eab308;
+  --ink-primary: #1e1b4b;
+  --ink-muted: #6b7280;
+  --ink-light: #9ca3af;
   --canvas-bg: #ffffff;
-  --surface-bg: #f4f6f8;
-  --hairline: #d9d9d9;
+  --surface-bg: #faf5ff;
+  --hairline: #e9d5ff;
 }
 
 body {
   font-family: 'Prompt', 'Inter', Arial, sans-serif;
-  background-color: #f4f6f8;
-  color: #333333;
+  background-color: #faf8fd;
+  color: #1e1b4b;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Headings in Domino's Condensed Style */
+/* Headings in Condensed Style */
 h1, h2, h3, .font-condensed {
   font-family: 'Barlow Condensed', 'Prompt', Arial, sans-serif;
   letter-spacing: 0.02em;
@@ -36,59 +37,59 @@ h1, h2, h3, .font-condensed {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #f3e8ff;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #c084fc;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #10789f;
+  background: #6d28d9;
 }
 
-/* Domino's Top Header Bar */
-.dominos-header {
-  background-color: #10789f;
+/* School Purple Top Header Bar */
+.school-header {
+  background-color: #6d28d9;
   color: #ffffff;
-  border-bottom: 2px solid #0d6282;
-  box-shadow: 0 4px 15px -2px rgba(16, 120, 159, 0.2);
+  border-bottom: 2px solid #5b21b6;
+  box-shadow: 0 4px 15px -2px rgba(109, 40, 217, 0.25);
 }
 
-/* Domino's Primary Red Action Button */
-.btn-dominos-primary {
-  background-color: #e3193b;
+/* School Yellow Action Button */
+.btn-school-yellow {
+  background-color: #facc15;
+  color: #1e1b4b;
+  font-family: 'Barlow Condensed', 'Prompt', sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+.btn-school-yellow:hover {
+  background-color: #eab308;
+  box-shadow: 0 4px 12px rgba(250, 204, 21, 0.4);
+}
+
+/* School Purple Action Button */
+.btn-school-purple {
+  background-color: #6d28d9;
   color: #ffffff;
   font-family: 'Barlow Condensed', 'Prompt', sans-serif;
   font-weight: 700;
   text-transform: uppercase;
   transition: all 0.2s ease;
 }
-.btn-dominos-primary:hover {
-  background-color: #cc1433;
-  box-shadow: 0 4px 12px rgba(227, 25, 59, 0.35);
+.btn-school-purple:hover {
+  background-color: #5b21b6;
+  box-shadow: 0 4px 12px rgba(109, 40, 217, 0.35);
 }
 
-/* Domino's Secondary Blue Action Button */
-.btn-dominos-secondary {
-  background-color: #10789f;
-  color: #ffffff;
-  font-family: 'Barlow Condensed', 'Prompt', sans-serif;
-  font-weight: 700;
-  text-transform: uppercase;
-  transition: all 0.2s ease;
-}
-.btn-dominos-secondary:hover {
-  background-color: #0d6282;
-  box-shadow: 0 4px 12px rgba(16, 120, 159, 0.3);
-}
-
-/* Domino's White Content Card */
-.dominos-card {
+/* White Content Card */
+.school-card {
   background-color: #ffffff;
-  border: 1px solid #d9d9d9;
-  box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e9d5ff;
+  box-shadow: 0 2px 8px -1px rgba(109, 40, 217, 0.05);
 }
 
 /* Ticket Notches styling */
@@ -103,7 +104,7 @@ h1, h2, h3, .font-condensed {
   transform: translateY(-50%);
   width: 24px;
   height: 24px;
-  background-color: #f4f6f8;
+  background-color: #faf8fd;
   border-radius: 50%;
   z-index: 10;
 }
@@ -119,7 +120,7 @@ h1, h2, h3, .font-condensed {
   transform: translateY(-50%);
   width: 24px;
   height: 24px;
-  background-color: #f4f6f8;
+  background-color: #faf8fd;
   border-radius: 50%;
   z-index: 10;
 }

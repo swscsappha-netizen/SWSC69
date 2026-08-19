@@ -41,15 +41,15 @@ export default function TicketCard({ order, showFullDetails = false, onOpenRevie
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-[#d9d9d9] shadow-sm overflow-hidden transition-all duration-200">
-      {/* Ticket Header & Big Code in Domino's Steel Blue */}
-      <div className="bg-[#10789f] p-5 sm:p-6 text-white relative border-b-2 border-[#0d6282]">
+    <div className="bg-white rounded-2xl border border-[#e9d5ff] shadow-sm overflow-hidden transition-all duration-200">
+      {/* Ticket Header & Big Code in School Purple & Yellow */}
+      <div className="bg-[#6d28d9] p-5 sm:p-6 text-white relative border-b-2 border-[#5b21b6]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="px-3 py-1 rounded text-xs font-black font-condensed bg-[#e3193b] text-white uppercase tracking-wider">
+            <span className="px-3 py-1 rounded text-xs font-black font-condensed bg-[#facc15] text-[#4c1d95] uppercase tracking-wider shadow-sm">
               ตั๋วรับอาหาร
             </span>
-            <span className="text-xs text-[#d7eff6] font-medium">
+            <span className="text-xs text-[#e9d5ff] font-medium">
               โรงเรียนสรรพวิทยาคม
             </span>
           </div>
@@ -57,13 +57,13 @@ export default function TicketCard({ order, showFullDetails = false, onOpenRevie
           {/* Status Pill in Header */}
           <div>
             {isPending && (
-              <span className="px-3 py-1 rounded text-xs font-bold bg-[#0c506c] text-[#d7eff6] border border-white/20 flex items-center gap-1">
+              <span className="px-3 py-1 rounded text-xs font-bold bg-[#5b21b6] text-[#e9d5ff] border border-white/20 flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5 animate-spin" />
                 รอแม่ค้าตรวจสลิป
               </span>
             )}
             {isConfirmed && (
-              <span className="px-3 py-1 rounded text-xs font-black font-condensed uppercase tracking-wider bg-[#e3193b] text-white flex items-center gap-1 shadow-sm">
+              <span className="px-3 py-1 rounded text-xs font-black font-condensed uppercase tracking-wider bg-[#facc15] text-[#4c1d95] flex items-center gap-1 shadow-sm">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 ยืนยันแล้ว • รอปรุง
               </span>
@@ -74,31 +74,31 @@ export default function TicketCard({ order, showFullDetails = false, onOpenRevie
               </span>
             )}
             {isCompleted && (
-              <span className="px-3 py-1 rounded text-xs font-bold bg-[#333333] text-white flex items-center gap-1">
+              <span className="px-3 py-1 rounded text-xs font-bold bg-[#1e1b4b] text-white flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 รับอาหารแล้ว
               </span>
             )}
             {isCancelled && (
-              <span className="px-3 py-1 rounded text-xs font-bold bg-[#333333] text-[#fecdd3] flex items-center gap-1 border border-[#fecdd3]/40">
-                <XCircle className="w-3.5 h-3.5 text-[#e3193b]" />
+              <span className="px-3 py-1 rounded text-xs font-bold bg-[#1e1b4b] text-[#fecdd3] flex items-center gap-1 border border-[#fecdd3]/40">
+                <XCircle className="w-3.5 h-3.5 text-[#ef4444]" />
                 ยกเลิกคำสั่งซื้อ
               </span>
             )}
           </div>
         </div>
 
-        {/* Big Order Code in Domino's Condensed Bold */}
+        {/* Big Order Code in School Condensed Bold */}
         <div className="mt-4 flex items-baseline justify-between flex-wrap gap-2">
           <div>
-            <div className="text-xs text-[#d7eff6] font-medium tracking-wide">รหัสออเดอร์สำหรับรับของ</div>
+            <div className="text-xs text-[#e9d5ff] font-medium tracking-wide">รหัสออเดอร์สำหรับรับของ</div>
             <div className="text-3xl sm:text-4xl font-black font-condensed tracking-wider uppercase text-white drop-shadow-sm">
               #{order.orderCode}
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xs text-[#d7eff6] font-medium">เวลานัดรับ</div>
-            <div className="text-sm sm:text-base font-extrabold text-white">
+            <div className="text-xs text-[#e9d5ff] font-medium">เวลานัดรับ</div>
+            <div className="text-sm sm:text-base font-extrabold text-[#facc15]">
               {order.pickupDate} ({order.pickupTimeWindow})
             </div>
           </div>
@@ -106,19 +106,19 @@ export default function TicketCard({ order, showFullDetails = false, onOpenRevie
       </div>
 
       {/* Prominent Pickup Stall Location Banner */}
-      <div className="bg-[#f0f9fb] px-5 py-3 border-b border-[#b4e0ed] flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-[#10789f] text-white flex items-center justify-center shrink-0 shadow-sm font-bold">
+      <div className="bg-[#faf5ff] px-5 py-3 border-b border-[#e9d5ff] flex items-center gap-3">
+        <div className="w-9 h-9 rounded-lg bg-[#6d28d9] text-[#facc15] flex items-center justify-center shrink-0 shadow-sm font-bold">
           <MapPin className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-[11px] font-bold text-[#0c506c] uppercase tracking-wide">
+          <div className="text-[11px] font-bold text-[#5b21b6] uppercase tracking-wide">
             จุดรับอาหาร / ล็อกโรงอาหาร
           </div>
-          <div className="text-sm sm:text-base font-extrabold text-[#333333] truncate">
+          <div className="text-sm sm:text-base font-extrabold text-[#1e1b4b] truncate">
             {order.stallName}
           </div>
         </div>
-        <div className="text-xs font-bold text-[#10789f] bg-white px-2.5 py-1 rounded border border-[#b4e0ed]">
+        <div className="text-xs font-bold text-[#6d28d9] bg-white px-2.5 py-1 rounded border border-[#e9d5ff]">
           {order.shopName}
         </div>
       </div>

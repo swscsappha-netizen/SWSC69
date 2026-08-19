@@ -17,14 +17,14 @@ export default function BottomNav() {
   ).length;
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-[#d9d9d9] px-4 py-2 shadow-lg">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-[#e9d5ff] px-4 py-2 shadow-lg">
       <div className="flex items-center justify-around">
         
         {/* Home / Market */}
         <Link
           href="/"
           className={`flex flex-col items-center gap-0.5 p-1 transition-colors ${
-            pathname === '/' ? 'text-[#10789f] font-bold' : 'text-[#858585] hover:text-[#333333]'
+            pathname === '/' ? 'text-[#6d28d9] font-bold' : 'text-[#6b7280] hover:text-[#1e1b4b]'
           }`}
         >
           <Utensils className="w-5 h-5" />
@@ -35,13 +35,13 @@ export default function BottomNav() {
         <Link
           href="/cart"
           className={`flex flex-col items-center gap-0.5 p-1 relative transition-colors ${
-            pathname === '/cart' ? 'text-[#10789f] font-bold' : 'text-[#858585] hover:text-[#333333]'
+            pathname === '/cart' ? 'text-[#6d28d9] font-bold' : 'text-[#6b7280] hover:text-[#1e1b4b]'
           }`}
         >
           <div className="relative">
             <ShoppingBag className="w-5 h-5" />
             {cartTotalItems > 0 && (
-              <span className="absolute -top-1.5 -right-2.5 w-4 h-4 rounded-full bg-[#e3193b] text-white text-[10px] font-bold flex items-center justify-center shadow-sm">
+              <span className="absolute -top-1.5 -right-2.5 w-4 h-4 rounded-full bg-[#facc15] text-[#4c1d95] text-[10px] font-black flex items-center justify-center shadow-sm">
                 {cartTotalItems}
               </span>
             )}
@@ -53,13 +53,13 @@ export default function BottomNav() {
         <Link
           href="/orders"
           className={`flex flex-col items-center gap-0.5 p-1 relative transition-colors ${
-            pathname.startsWith('/orders') ? 'text-[#10789f] font-bold' : 'text-[#858585] hover:text-[#333333]'
+            pathname.startsWith('/orders') ? 'text-[#6d28d9] font-bold' : 'text-[#6b7280] hover:text-[#1e1b4b]'
           }`}
         >
           <div className="relative">
             <Ticket className="w-5 h-5" />
             {activeOrdersCount > 0 && (
-              <span className="absolute -top-1.5 -right-2.5 w-4 h-4 rounded-full bg-[#e3193b] text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
+              <span className="absolute -top-1.5 -right-2.5 w-4 h-4 rounded-full bg-[#facc15] text-[#4c1d95] text-[10px] font-black flex items-center justify-center animate-pulse">
                 {activeOrdersCount}
               </span>
             )}
@@ -72,7 +72,7 @@ export default function BottomNav() {
           <Link
             href="/merchant"
             className={`flex flex-col items-center gap-0.5 p-1 transition-colors ${
-              pathname.startsWith('/merchant') ? 'text-[#e3193b] font-bold' : 'text-[#858585] hover:text-[#333333]'
+              pathname.startsWith('/merchant') ? 'text-[#6d28d9] font-bold' : 'text-[#6b7280] hover:text-[#1e1b4b]'
             }`}
           >
             <Store className="w-5 h-5" />
@@ -82,7 +82,7 @@ export default function BottomNav() {
           <Link
             href="/admin"
             className={`flex flex-col items-center gap-0.5 p-1 transition-colors ${
-              pathname.startsWith('/admin') ? 'text-[#10789f] font-bold' : 'text-[#858585] hover:text-[#333333]'
+              pathname.startsWith('/admin') ? 'text-[#6d28d9] font-bold' : 'text-[#6b7280] hover:text-[#1e1b4b]'
             }`}
           >
             <ShieldCheck className="w-5 h-5" />
@@ -92,7 +92,7 @@ export default function BottomNav() {
           <Link
             href="/profile"
             className={`flex flex-col items-center gap-0.5 p-1 transition-colors ${
-              pathname === '/profile' ? 'text-[#10789f] font-bold' : 'text-[#858585] hover:text-[#333333]'
+              pathname === '/profile' ? 'text-[#6d28d9] font-bold' : 'text-[#6b7280] hover:text-[#1e1b4b]'
             }`}
           >
             <User className="w-5 h-5" />

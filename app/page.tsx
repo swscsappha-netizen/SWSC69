@@ -61,16 +61,16 @@ export default function HomePage() {
       {/* Top Banner Carousel (If any announcements exist) */}
       <BannerCarousel />
 
-      {/* School Canteen Info Bar & Welcome Hero in Domino's Steel Blue Style */}
-      <div className="relative overflow-hidden rounded-2xl bg-[#10789f] p-6 sm:p-8 text-white shadow-md border-2 border-[#0d6282]">
+      {/* School Canteen Info Bar & Welcome Hero in School Purple & Yellow Style */}
+      <div className="relative overflow-hidden rounded-2xl bg-[#6d28d9] p-6 sm:p-8 text-white shadow-md border-2 border-[#5b21b6]">
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           <div className="space-y-2.5">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded text-xs font-black font-condensed uppercase tracking-wider bg-[#e3193b] text-white shadow-sm">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded text-xs font-black font-condensed uppercase tracking-wider bg-[#facc15] text-[#4c1d95] shadow-sm">
                 <Sparkles className="w-3.5 h-3.5" />
-                โรงเรียนสรรพวิทยาคม
+                โรงเรียนสรรพวิทยาคม (ส.ว. ม่วง-เหลือง)
               </span>
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded text-xs font-bold bg-[#0c506c] text-[#d7eff6] border border-white/20">
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded text-xs font-bold bg-[#5b21b6] text-[#e9d5ff] border border-white/20">
                 {currentUser.isLoggedIn
                   ? `ยินดีต้อนรับ, ${currentUser.nickname || currentUser.name} (${currentUser.gradeRoom || 'ส.ว.'})`
                   : 'ระบบสั่งอาหารล่วงหน้าออนไลน์'}
@@ -78,12 +78,12 @@ export default function HomePage() {
             </div>
 
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black font-condensed tracking-wider uppercase text-white">
-              DISCOVER THE WORLD OF SAPPHA PRE-ORDER 🍱
+              สั่งอาหารล่วงหน้าง่ายๆ <span className="text-[#facc15]">รับไวไม่ต้องรอคิว</span> 🍱
             </h1>
 
-            <p className="text-xs sm:text-sm text-[#d7eff6] flex items-center gap-2 flex-wrap font-medium">
-              <span className="inline-flex items-center gap-1 text-white font-bold bg-[#0c506c] px-2.5 py-1 rounded border border-white/20">
-                <Clock className="w-4 h-4 text-amber-300" />
+            <p className="text-xs sm:text-sm text-[#e9d5ff] flex items-center gap-2 flex-wrap font-medium">
+              <span className="inline-flex items-center gap-1 text-white font-bold bg-[#5b21b6] px-2.5 py-1 rounded border border-white/20">
+                <Clock className="w-4 h-4 text-[#facc15]" />
                 เวลารับอาหาร: {systemSettings.pickupTimeWindow || '06:45 - 07:45 น.'}
               </span>
               <span className="text-white/40 hidden sm:inline">•</span>
@@ -93,40 +93,40 @@ export default function HomePage() {
 
           {/* Live Status Pill */}
           <div className="flex flex-wrap items-center gap-3">
-            <div className="px-4 py-3 rounded-xl bg-[#0c506c] border border-white/20 flex items-center gap-3 shadow-inner">
+            <div className="px-4 py-3 rounded-xl bg-[#5b21b6] border border-white/20 flex items-center gap-3 shadow-inner">
               <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-400" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#facc15] opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#facc15]" />
               </span>
               <div>
                 <div className="text-xs font-black uppercase tracking-wider font-condensed text-white">เปิดรับออเดอร์มื้อเช้า</div>
-                <div className="text-[11px] text-[#d7eff6] font-medium">สั่งวันนี้ รับพรุ่งนี้เช้า</div>
+                <div className="text-[11px] text-[#facc15] font-medium">สั่งวันนี้ รับพรุ่งนี้เช้า</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* 3 Quick Benefit Pills */}
-        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6 pt-5 border-t border-white/15 text-xs text-[#d7eff6]">
+        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6 pt-5 border-t border-white/15 text-xs text-[#e9d5ff]">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-[#e3193b] text-white flex items-center justify-center shrink-0 shadow-sm">
-              <Zap className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-lg bg-[#facc15] text-[#4c1d95] flex items-center justify-center shrink-0 shadow-sm font-black">
+              <Zap className="w-4 h-4 text-[#4c1d95]" />
             </div>
-            <span className="font-medium">สั่งล่วงหน้า ไม่ต้องยืนต่อแถวนาน</span>
+            <span className="font-medium text-white">สั่งล่วงหน้า ไม่ต้องยืนต่อแถวนาน</span>
           </div>
 
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-[#0c506c] border border-white/20 text-white flex items-center justify-center shrink-0 shadow-sm">
-              <CreditCard className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-lg bg-[#5b21b6] border border-white/20 text-[#facc15] flex items-center justify-center shrink-0 shadow-sm">
+              <CreditCard className="w-4 h-4 text-[#facc15]" />
             </div>
-            <span className="font-medium">สแกนจ่ายสะดวกด้วย พร้อมเพย์ (PromptPay)</span>
+            <span className="font-medium text-white">สแกนจ่ายสะดวกด้วย พร้อมเพย์ (PromptPay)</span>
           </div>
 
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-[#0c506c] border border-white/20 text-white flex items-center justify-center shrink-0 shadow-sm">
-              <Ticket className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-lg bg-[#5b21b6] border border-white/20 text-[#facc15] flex items-center justify-center shrink-0 shadow-sm">
+              <Ticket className="w-4 h-4 text-[#facc15]" />
             </div>
-            <span className="font-medium">ยื่นตั๋วรับของด้วยรหัส 4 หลักรวดเร็ว</span>
+            <span className="font-medium text-white">ยื่นตั๋วรับของด้วยรหัส 4 หลักรวดเร็ว</span>
           </div>
         </div>
       </div>
