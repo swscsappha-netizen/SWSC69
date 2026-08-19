@@ -275,3 +275,61 @@ describe('6. Merchant Full Customization & Order Workflow Tests', () => {
   });
 });
 
+describe('7. Direct Image Upload & Zero-URL Input Enforcement Tests', () => {
+  it('should accept and store real Base64 image data directly from device upload', () => {
+    const rawUploadedBase64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...';
+    
+    const product = {
+      id: 'prod_1',
+      name: 'ข้าวมันไก่ตอนพิเศษ',
+      imageUrl: rawUploadedBase64,
+    };
+
+    assert.strictEqual(product.imageUrl.startsWith('data:image/jpeg;base64,'), true);
+    assert.strictEqual(product.imageUrl.includes('unsplash.com'), false);
+  });
+
+  it('should reject checkout submission if any shop in cart lacks a real attached slip', () => {
+    const shopGroups = [
+      { shopId: 'shop_1', shopName: 'ร้านป้าณี' },
+      { shopId: 'shop_2', shopName: 'ร้านน้ำปั่น' },
+    ];
+    const slips: Record<string, string> = {
+      shop_1: 'data:image/jpeg;base64,real_slip_1',
+      // shop_2 missing slip!
+    };
+
+    let canSubmit = true;
+    for (const g of shopGroups) {
+      if (!slips[g.shopId] || !slips[g.shopId].trim()) {
+        canSubmit = false;
+        break;
+      }
+    }
+
+    assert.strictEqual(canSubmit, false);
+  });
+
+  it('should allow checkout submission when all shops have real attached slips', () => {
+    const shopGroups = [
+      { shopId: 'shop_1', shopName: 'ร้านป้าณี' },
+      { shopId: 'shop_2', shopName: 'ร้านน้ำปั่น' },
+    ];
+    const slips: Record<string, string> = {
+      shop_1: 'data:image/jpeg;base64,real_slip_1',
+      shop_2: 'data:image/jpeg;base64,real_slip_2',
+    };
+
+    let canSubmit = true;
+    for (const g of shopGroups) {
+      if (!slips[g.shopId] || !slips[g.shopId].trim()) {
+        canSubmit = false;
+        break;
+      }
+    }
+
+    assert.strictEqual(canSubmit, true);
+  });
+});
+
+

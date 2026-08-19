@@ -155,13 +155,17 @@ export default function StudentOnboardingModal() {
         <div className="px-6 pt-4">
           <div className="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-900 text-xs shadow-sm">
             <div className="flex items-center gap-2.5 truncate">
-              <div className="w-8 h-8 rounded-full overflow-hidden border border-emerald-400 flex-shrink-0">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={currentUser.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80'}
-                  alt="LINE Profile"
-                  className="w-full h-full object-cover"
-                />
+              <div className="w-8 h-8 rounded-full overflow-hidden border border-emerald-400 flex-shrink-0 bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">
+                {currentUser.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={currentUser.avatarUrl}
+                    alt="LINE Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span>{(currentUser.name || 'SW').slice(0, 1)}</span>
+                )}
               </div>
               <div className="truncate text-left">
                 <p className="text-[10px] text-emerald-600 font-extrabold uppercase">บัญชี LINE ที่เชื่อมต่อ</p>

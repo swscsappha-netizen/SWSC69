@@ -24,6 +24,7 @@ import {
   Sparkles,
   Layers,
 } from 'lucide-react';
+import ImageUploadBox from '@/components/ImageUploadBox';
 
 const CATEGORIES: { value: string; label: string; emoji: string }[] = [
   { value: 'all', label: 'ทั้งหมด', emoji: '🍽️' },
@@ -118,7 +119,7 @@ export default function MerchantMenuManagerPage() {
     setFormDesc('');
     setFormPrice(35);
     setFormCategory('rice');
-    setFormImageUrl('https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80');
+    setFormImageUrl('');
     setFormDailyQuota(40);
     setFormOptionGroups([]);
     setIsNewModalOpen(true);
@@ -472,44 +473,29 @@ export default function MerchantMenuManagerPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">หมวดหมู่อาหาร:</label>
-                  <select
-                    value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value as any)}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800"
-                  >
-                    <option value="rice">🍚 ข้าว/จานหลัก</option>
-                    <option value="noodle">🍜 ก๋วยเตี๋ยว/เส้น</option>
-                    <option value="drink">🧋 เครื่องดื่ม</option>
-                    <option value="snack">🍟 ของทานเล่น</option>
-                    <option value="dessert">🍡 ของหวาน/ขนม</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">ลิงก์รูปภาพเมนู:</label>
-                  <input
-                    type="url"
-                    value={formImageUrl}
-                    onChange={(e) => setFormImageUrl(e.target.value)}
-                    placeholder="https://..."
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-800 text-[11px]"
-                  />
-                </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">หมวดหมู่อาหาร:</label>
+                <select
+                  value={formCategory}
+                  onChange={(e) => setFormCategory(e.target.value as any)}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800"
+                >
+                  <option value="rice">🍚 ข้าว/จานหลัก</option>
+                  <option value="noodle">🍜 ก๋วยเตี๋ยว/เส้น</option>
+                  <option value="drink">🧋 เครื่องดื่ม</option>
+                  <option value="snack">🍟 ของทานเล่น</option>
+                  <option value="dessert">🍡 ของหวาน/ขนม</option>
+                </select>
               </div>
 
-              {/* Image Preview */}
-              {formImageUrl && (
-                <div className="p-2 bg-slate-50 rounded-2xl border border-slate-200 flex items-center gap-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={formImageUrl} alt="Preview" className="w-12 h-12 rounded-xl object-cover" />
-                  <div className="text-[11px] text-slate-500 font-medium truncate flex-1">
-                    แสดงตัวอย่างรูปภาพ
-                  </div>
-                </div>
-              )}
+              {/* Direct File Image Upload Box */}
+              <ImageUploadBox
+                label="รูปภาพเมนูอาหาร"
+                value={formImageUrl}
+                onChange={setFormImageUrl}
+                aspectRatio="square"
+                helperText="กดเพื่อเลือกรูปภาพจากเครื่อง หรือถ่ายรูปใหม่"
+              />
 
               <div>
                 <label className="font-bold text-slate-700 block mb-1">คำอธิบาย/ส่วนประกอบ:</label>

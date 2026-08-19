@@ -94,11 +94,31 @@ export default function ProfilePage() {
       ? 'bg-blue-100 text-blue-700 border-blue-200'
       : 'bg-brand-100 text-brand-700 border-brand-200';
 
+  const avatarInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const { processImageFile } = await import('@/lib/imageUtils');
+      const optimizedBase64 = await processImageFile(file, 600, 0.85);
+      setAvatarUrl(optimizedBase64);
+      markChanged();
+      showToast('success', 'เปลี่ยนรูปโปรไฟล์แล้ว ✨', 'อย่าลืมกดปุ่มบันทึกการเปลี่ยนแปลง');
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
       {/* Header */}
       <div className="text-center space-y-3">
         <div className="relative w-24 h-24 mx-auto">
+          <input
+            type="file"
+            ref={avatarInputRef}
+            onChange={handleAvatarFileChange}
+            accept="image/*"
+            className="hidden"
+          />
           <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-brand-500 to-amber-400 text-white flex items-center justify-center text-4xl font-black shadow-lg overflow-hidden">
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -109,11 +129,9 @@ export default function ProfilePage() {
           </div>
           <button
             type="button"
-            className="absolute -bottom-2 -right-2 w-8 h-8 bg-white border-2 border-slate-200 rounded-full flex items-center justify-center shadow-md hover:bg-slate-50 transition"
-            onClick={() => {
-              const url = prompt('วาง URL รูปภาพโปรไฟล์:');
-              if (url) { setAvatarUrl(url); markChanged(); }
-            }}
+            className="absolute -bottom-2 -right-2 w-8 h-8 bg-white border-2 border-slate-200 rounded-full flex items-center justify-center shadow-md hover:bg-slate-50 transition cursor-pointer"
+            onClick={() => avatarInputRef.current?.click()}
+            title="กดเพื่อเลือกรูปโปรไฟล์จากเครื่อง หรือถ่ายรูปใหม่"
           >
             <Camera className="w-3.5 h-3.5 text-slate-600" />
           </button>

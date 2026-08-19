@@ -38,6 +38,7 @@ import {
   Hash,
 } from 'lucide-react';
 import { OrderStatus, Shop, UserRole, UserProfile } from '@/types';
+import ImageUploadBox from '@/components/ImageUploadBox';
 
 export default function AdminPortalPage() {
   const {
@@ -115,9 +116,7 @@ export default function AdminPortalPage() {
   const [newAnnTitle, setNewAnnTitle] = useState('');
   const [newAnnSubtitle, setNewAnnSubtitle] = useState('');
   const [newAnnBadge, setNewAnnBadge] = useState('ข่าวประชาสัมพันธ์');
-  const [newAnnImage, setNewAnnImage] = useState(
-    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80'
-  );
+  const [newAnnImage, setNewAnnImage] = useState('');
 
   // Users Filter & Management
   const [userSearch, setUserSearch] = useState('');
@@ -188,12 +187,8 @@ export default function AdminPortalPage() {
   const [shopFormPhone, setShopFormPhone] = useState('');
   const [shopFormPromptPay, setShopFormPromptPay] = useState('');
   const [shopFormCutoff, setShopFormCutoff] = useState('20:00');
-  const [shopFormBanner, setShopFormBanner] = useState(
-    'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80'
-  );
-  const [shopFormImage, setShopFormImage] = useState(
-    'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80'
-  );
+  const [shopFormBanner, setShopFormBanner] = useState('');
+  const [shopFormImage, setShopFormImage] = useState('');
   const [shopFormBindUserId, setShopFormBindUserId] = useState('');
   const [shopFormIsOpen, setShopFormIsOpen] = useState(true);
   const [shopFormIsApproved, setShopFormIsApproved] = useState(true);
@@ -208,8 +203,8 @@ export default function AdminPortalPage() {
     setShopFormPhone('');
     setShopFormPromptPay('');
     setShopFormCutoff('20:00');
-    setShopFormBanner('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80');
-    setShopFormImage('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80');
+    setShopFormBanner('');
+    setShopFormImage('');
     setShopFormBindUserId('');
     setShopFormIsOpen(true);
     setShopFormIsApproved(true);
@@ -1434,14 +1429,13 @@ export default function AdminPortalPage() {
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
                 />
               </div>
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">URL รูปภาพแบนเนอร์:</label>
-                <input
-                  type="url"
-                  required
+              <div className="col-span-1 sm:col-span-2">
+                <ImageUploadBox
+                  label="รูปภาพแบนเนอร์ประชาสัมพันธ์"
                   value={newAnnImage}
-                  onChange={(e) => setNewAnnImage(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-[11px]"
+                  onChange={setNewAnnImage}
+                  aspectRatio="banner"
+                  helperText="กดเพื่อเลือกรูปภาพจากเครื่อง หรือถ่ายรูปใหม่"
                 />
               </div>
             </div>
@@ -1881,26 +1875,20 @@ export default function AdminPortalPage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">URL รูปภาพหน้าร้าน (Logo / Image):</label>
-                  <input
-                    type="url"
-                    required
-                    value={shopFormImage}
-                    onChange={(e) => setShopFormImage(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-[11px]"
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">URL รูปแบนเนอร์ (Hero Banner):</label>
-                  <input
-                    type="url"
-                    required
-                    value={shopFormBanner}
-                    onChange={(e) => setShopFormBanner(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-[11px]"
-                  />
-                </div>
+                <ImageUploadBox
+                  label="รูปภาพหน้าร้าน (Logo / Image)"
+                  value={shopFormImage}
+                  onChange={setShopFormImage}
+                  aspectRatio="square"
+                  helperText="กดเพื่อเลือกรูปภาพจากเครื่อง"
+                />
+                <ImageUploadBox
+                  label="รูปแบนเนอร์ (Hero Banner)"
+                  value={shopFormBanner}
+                  onChange={setShopFormBanner}
+                  aspectRatio="banner"
+                  helperText="กดเพื่อเลือกรูปภาพจากเครื่อง"
+                />
               </div>
 
               {/* Status Toggles */}

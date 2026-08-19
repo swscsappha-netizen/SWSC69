@@ -6,6 +6,7 @@ import { useApp } from '@/context/AppContext';
 import { Product, OptionGroup, OptionItem } from '@/types';
 import { Plus, Trash2, ChevronDown, ChevronUp, Image as ImageIcon, ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
+import ImageUploadBox from '@/components/ImageUploadBox';
 
 const CATEGORIES: { value: Product['category']; label: string; emoji: string }[] = [
   { value: 'rice', label: 'ข้าว/อาหารจานหลัก', emoji: '🍚' },
@@ -226,51 +227,14 @@ export default function MenuForm({ initialProduct, shopId, mode }: MenuFormProps
               </div>
             </div>
 
-            {/* Image URL & File Upload */}
-            <div>
-              <label className="block font-bold text-slate-700 mb-1.5 flex items-center justify-between">
-                <span className="flex items-center gap-1">
-                  <ImageIcon className="w-3 h-3 text-slate-400" />
-                  รูปภาพอาหาร (อัปโหลดเข้าไดรฟ์ หรือระบุ URL)
-                </span>
-                <label className="cursor-pointer px-3 py-1 rounded-xl bg-orange-50 hover:bg-orange-100 text-brand-600 font-extrabold text-[11px] border border-orange-200 transition-all flex items-center gap-1">
-                  <span>📁 อัปโหลดรูปจากเครื่อง</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const { uploadImage } = await import('@/lib/uploadHelper');
-                        const timestamp = Date.now().toString().slice(-6);
-                        const res = await uploadImage(file, `menu_${timestamp}.jpg`, {
-                          shopName: currentShop?.name || 'ร้านค้าโรงอาหาร',
-                          category: 'รูปเมนูอาหาร',
-                          includeDate: false,
-                        });
-                        setImageUrl(res.fileUrl);
-                      }
-                    }}
-                  />
-                </label>
-              </label>
-              <div className="flex gap-3 items-start">
-                <input
-                  type="url"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/... หรือกดปุ่มอัปโหลดรูปจากเครื่อง"
-                  className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-brand-400 transition text-[11px] font-mono"
-                />
-                {imageUrl && (
-                  <div className="w-16 h-16 rounded-2xl overflow-hidden border border-slate-200 flex-shrink-0 bg-slate-100 shadow-sm">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={imageUrl} alt="preview" className="w-full h-full object-cover" />
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* Image Direct Upload */}
+            <ImageUploadBox
+              label="รูปภาพอาหาร"
+              value={imageUrl}
+              onChange={setImageUrl}
+              aspectRatio="square"
+              helperText="กดเพื่อเลือกรูปภาพจากเครื่อง หรือถ่ายรูปใหม่"
+            />
 
             {/* Quota + Availability */}
             <div className="grid grid-cols-2 gap-4">

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import confetti from 'canvas-confetti';
+import ImageUploadBox from '@/components/ImageUploadBox';
 
 export default function MerchantRegisterPage() {
   const router = useRouter();
@@ -33,12 +34,8 @@ export default function MerchantRegisterPage() {
   const [phone, setPhone] = useState(currentUser.phone || '');
   const [promptPayNo, setPromptPayNo] = useState(currentUser.promptPayRefund || currentUser.phone || '');
   const [cutoffTime, setCutoffTime] = useState('20:00');
-  const [bannerUrl, setBannerUrl] = useState(
-    'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80'
-  );
-  const [imageUrl, setImageUrl] = useState(
-    'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80'
-  );
+  const [bannerUrl, setBannerUrl] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
 
   // Fee Slip Upload
   const [feeSlip, setFeeSlip] = useState<string | null>(null);
@@ -247,6 +244,24 @@ export default function MerchantRegisterPage() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500"
+          />
+        </div>
+
+        {/* Shop Visual Images */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <ImageUploadBox
+            label="ภาพปกหน้าร้าน (Cover Banner)"
+            value={bannerUrl}
+            onChange={setBannerUrl}
+            aspectRatio="banner"
+            helperText="กดเพื่อเลือกรูปภาพจากเครื่อง"
+          />
+          <ImageUploadBox
+            label="โลโก้ร้านค้า (Shop Logo)"
+            value={imageUrl}
+            onChange={setImageUrl}
+            aspectRatio="square"
+            helperText="กดเพื่อเลือกรูปภาพจากเครื่อง"
           />
         </div>
 

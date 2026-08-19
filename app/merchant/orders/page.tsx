@@ -27,6 +27,7 @@ import {
   ChevronRight,
   Filter,
 } from 'lucide-react';
+import ImageUploadBox from '@/components/ImageUploadBox';
 
 export default function MerchantOrdersHandoverPage() {
   const router = useRouter();
@@ -457,18 +458,13 @@ export default function MerchantOrdersHandoverPage() {
                 />
               </div>
 
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  ลิงก์สลิปโอนเงินคืน (ถ้ามีการโอนคืน):
-                </label>
-                <input
-                  type="url"
-                  value={refundSlipUrl}
-                  onChange={(e) => setRefundSlipUrl(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl"
-                />
-              </div>
+              <ImageUploadBox
+                label="แนบหลักฐานสลิปโอนเงินคืน (ถ้ามี)"
+                value={refundSlipUrl}
+                onChange={setRefundSlipUrl}
+                aspectRatio="square"
+                helperText="กดเพื่อเลือกรูปภาพจากเครื่อง หรือถ่ายรูปสลิป"
+              />
 
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-500">
                 พร้อมเพย์ผู้รับเงินคืน: <strong className="text-slate-800">{rejectingOrder.userPromptPayRefund || rejectingOrder.userPhone}</strong>

@@ -17,22 +17,9 @@ import {
   ArrowLeft,
   Image as ImageIcon,
   MapPin,
-  Sparkles,
   Check,
 } from 'lucide-react';
-
-const PRESET_LOGOS = [
-  'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80',
-  'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=80',
-  'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&q=80',
-  'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&q=80',
-];
-
-const PRESET_BANNERS = [
-  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&q=80',
-  'https://images.unsplash.com/photo-1543353071-873f17a7a088?w=1200&q=80',
-  'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=1200&q=80',
-];
+import ImageUploadBox from '@/components/ImageUploadBox';
 
 export default function MerchantSettingsPage() {
   const router = useRouter();
@@ -140,86 +127,30 @@ function MerchantSettingsForm({
       <form onSubmit={handleSave} className="space-y-5">
         
         {/* Visual Branding Card */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-5">
           <h2 className="font-black text-sm text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
             <Camera className="w-4 h-4 text-brand-600" />
             <span>รูปภาพโลโก้ และภาพแบนเนอร์หน้าร้าน</span>
           </h2>
 
-          <div className="space-y-4 text-xs">
-            {/* Banner Preview */}
-            <div className="space-y-1.5">
-              <label className="font-bold text-slate-700 block">ภาพแบนเนอร์ปกหน้าร้าน (Cover Banner):</label>
-              <div className="w-full h-32 sm:h-40 rounded-2xl bg-slate-100 overflow-hidden border border-slate-200 relative shadow-inner">
-                {bannerUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={bannerUrl} alt="Cover Banner" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-400">
-                    ไม่มีรูปแบนเนอร์
-                  </div>
-                )}
-              </div>
-              <input
-                type="url"
-                value={bannerUrl}
-                onChange={(e) => setBannerUrl(e.target.value)}
-                placeholder="กรอก URL รูปภาพแบนเนอร์ https://..."
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-[11px]"
-              />
-              <div className="flex items-center gap-2 pt-1">
-                <span className="text-[10px] text-slate-400">หรือเลือกภาพสำเร็จรูป:</span>
-                {PRESET_BANNERS.map((url, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setBannerUrl(url)}
-                    className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md font-bold"
-                  >
-                    แบนเนอร์ {idx + 1}
-                  </button>
-                ))}
-              </div>
-            </div>
+          <div className="space-y-4">
+            {/* Banner Upload */}
+            <ImageUploadBox
+              label="ภาพแบนเนอร์ปกหน้าร้าน (Cover Banner)"
+              value={bannerUrl}
+              onChange={setBannerUrl}
+              aspectRatio="banner"
+              helperText="กดเพื่อเลือกรูปภาพแบนเนอร์จากเครื่อง หรือถ่ายรูปใหม่"
+            />
 
-            {/* Logo Preview */}
-            <div className="space-y-1.5">
-              <label className="font-bold text-slate-700 block">โลโก้ร้านค้า (Shop Profile Image):</label>
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-slate-100 overflow-hidden border border-slate-200 shrink-0 shadow-inner">
-                  {imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={imageUrl} alt="Logo" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-400">
-                      <Store className="w-6 h-6" />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 space-y-1">
-                  <input
-                    type="url"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="กรอก URL โลโก้ https://..."
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-[11px]"
-                  />
-                  <div className="flex items-center gap-1.5 pt-1">
-                    <span className="text-[10px] text-slate-400">หรือเลือก:</span>
-                    {PRESET_LOGOS.map((url, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setImageUrl(url)}
-                        className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md font-bold"
-                      >
-                        โลโก้ {idx + 1}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Logo Upload */}
+            <ImageUploadBox
+              label="โลโก้ร้านค้า (Shop Logo)"
+              value={imageUrl}
+              onChange={setImageUrl}
+              aspectRatio="square"
+              helperText="กดเพื่อเลือกรูปภาพโลโก้ร้านจากเครื่อง หรือถ่ายรูปใหม่"
+            />
           </div>
         </div>
 
