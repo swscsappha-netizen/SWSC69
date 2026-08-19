@@ -41,15 +41,15 @@ export default function TicketCard({ order, showFullDetails = false, onOpenRevie
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-[#e9d5ff] shadow-sm overflow-hidden transition-all duration-200">
-      {/* Ticket Header & Big Code in School Purple & Yellow */}
-      <div className="bg-[#6d28d9] p-5 sm:p-6 text-white relative border-b-2 border-[#5b21b6]">
+    <div className="bg-white rounded-xs border border-[#451400] shadow-tile overflow-hidden transition-all duration-200">
+      {/* Ticket Header & Big Code in Chipotle Burnt Umber */}
+      <div className="bg-[#451400] p-5 sm:p-6 text-white relative border-b border-[#000000]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="px-3 py-1 rounded text-xs font-black font-condensed bg-[#facc15] text-[#4c1d95] uppercase tracking-wider shadow-sm">
+            <span className="px-3 py-1 rounded-xs text-xs font-black font-display bg-[#b68207] text-white uppercase tracking-wider shadow-xs">
               ตั๋วรับอาหาร
             </span>
-            <span className="text-xs text-[#e9d5ff] font-medium">
+            <span className="text-xs text-[#dec2b4] font-medium font-sans">
               โรงเรียนสรรพวิทยาคม
             </span>
           </div>
@@ -57,48 +57,48 @@ export default function TicketCard({ order, showFullDetails = false, onOpenRevie
           {/* Status Pill in Header */}
           <div>
             {isPending && (
-              <span className="px-3 py-1 rounded text-xs font-bold bg-[#5b21b6] text-[#e9d5ff] border border-white/20 flex items-center gap-1">
+              <span className="px-3 py-1 rounded-xs text-xs font-bold bg-[#6b321b] text-[#dec2b4] border border-[#786259] flex items-center gap-1 font-sans">
                 <Clock className="w-3.5 h-3.5 animate-spin" />
                 รอแม่ค้าตรวจสลิป
               </span>
             )}
             {isConfirmed && (
-              <span className="px-3 py-1 rounded text-xs font-black font-condensed uppercase tracking-wider bg-[#facc15] text-[#4c1d95] flex items-center gap-1 shadow-sm">
+              <span className="px-3 py-1 rounded-xs text-xs font-black font-display uppercase tracking-wider bg-[#b68207] text-white flex items-center gap-1 shadow-xs">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 ยืนยันแล้ว • รอปรุง
               </span>
             )}
             {isReady && (
-              <span className="px-3 py-1 rounded text-xs font-black font-condensed uppercase tracking-wider bg-emerald-500 text-white animate-bounce flex items-center gap-1 shadow-sm">
+              <span className="px-3 py-1 rounded-xs text-xs font-black font-display uppercase tracking-wider bg-[#10b981] text-white animate-bounce flex items-center gap-1 shadow-xs">
                 🎉 พร้อมรับของแล้ว!
               </span>
             )}
             {isCompleted && (
-              <span className="px-3 py-1 rounded text-xs font-bold bg-[#1e1b4b] text-white flex items-center gap-1">
+              <span className="px-3 py-1 rounded-xs text-xs font-bold bg-[#786259] text-white flex items-center gap-1 font-sans">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 รับอาหารแล้ว
               </span>
             )}
             {isCancelled && (
-              <span className="px-3 py-1 rounded text-xs font-bold bg-[#1e1b4b] text-[#fecdd3] flex items-center gap-1 border border-[#fecdd3]/40">
-                <XCircle className="w-3.5 h-3.5 text-[#ef4444]" />
+              <span className="px-3 py-1 rounded-xs text-xs font-bold bg-[#451400] text-[#fecdd3] flex items-center gap-1 border border-[#ad2118] font-sans">
+                <XCircle className="w-3.5 h-3.5 text-[#ad2118]" />
                 ยกเลิกคำสั่งซื้อ
               </span>
             )}
           </div>
         </div>
 
-        {/* Big Order Code in School Condensed Bold */}
+        {/* Big Order Code in Trade Gothic / Oswald Condensed Bold */}
         <div className="mt-4 flex items-baseline justify-between flex-wrap gap-2">
           <div>
-            <div className="text-xs text-[#e9d5ff] font-medium tracking-wide">รหัสออเดอร์สำหรับรับของ</div>
-            <div className="text-3xl sm:text-4xl font-black font-condensed tracking-wider uppercase text-white drop-shadow-sm">
+            <div className="text-xs text-[#dec2b4] font-medium tracking-wide uppercase font-sans">รหัสออเดอร์สำหรับรับของ</div>
+            <div className="text-3xl sm:text-4xl font-black font-display tracking-wider uppercase text-white drop-shadow-xs">
               #{order.orderCode}
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xs text-[#e9d5ff] font-medium">เวลานัดรับ</div>
-            <div className="text-sm sm:text-base font-extrabold text-[#facc15]">
+            <div className="text-xs text-[#dec2b4] font-medium font-sans">เวลานัดรับ</div>
+            <div className="text-sm sm:text-base font-extrabold text-[#facc15] font-sans">
               {order.pickupDate} ({order.pickupTimeWindow})
             </div>
           </div>
@@ -106,19 +106,19 @@ export default function TicketCard({ order, showFullDetails = false, onOpenRevie
       </div>
 
       {/* Prominent Pickup Stall Location Banner */}
-      <div className="bg-[#faf5ff] px-5 py-3 border-b border-[#e9d5ff] flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-[#6d28d9] text-[#facc15] flex items-center justify-center shrink-0 shadow-sm font-bold">
-          <MapPin className="w-5 h-5" />
+      <div className="bg-[#f2f2f2] px-5 py-3 border-b border-[#d4cbc7] flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xs bg-[#451400] text-white flex items-center justify-center shrink-0 shadow-xs font-bold">
+          <MapPin className="w-5 h-5 text-[#b68207]" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-[11px] font-bold text-[#5b21b6] uppercase tracking-wide">
+          <div className="text-[11px] font-bold text-[#786259] uppercase tracking-wider font-display">
             จุดรับอาหาร / ล็อกโรงอาหาร
           </div>
-          <div className="text-sm sm:text-base font-extrabold text-[#1e1b4b] truncate">
+          <div className="text-sm sm:text-base font-extrabold text-[#451400] truncate font-sans">
             {order.stallName}
           </div>
         </div>
-        <div className="text-xs font-bold text-[#6d28d9] bg-white px-2.5 py-1 rounded border border-[#e9d5ff]">
+        <div className="text-xs font-bold text-[#451400] bg-white px-2.5 py-1 rounded-xs border border-[#451400] font-display uppercase">
           {order.shopName}
         </div>
       </div>

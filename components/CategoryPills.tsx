@@ -27,9 +27,9 @@ export default function CategoryPills({
 }: CategoryPillsProps) {
   return (
     <div className="space-y-3.5">
-      {/* Search Input Bar with School Purple Accent */}
+      {/* Search Input Bar with Chipotle Burnt-Umber Outline */}
       <div className="relative w-full group">
-        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-[#faf5ff] text-[#6d28d9] flex items-center justify-center pointer-events-none group-focus-within:bg-[#6d28d9] group-focus-within:text-white transition-all duration-200">
+        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-xs bg-[#f2f2f2] text-[#451400] flex items-center justify-center pointer-events-none group-focus-within:bg-[#451400] group-focus-within:text-white transition-all duration-150">
           <Search className="w-4 h-4" />
         </div>
         <input
@@ -37,12 +37,12 @@ export default function CategoryPills({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="ค้นหาเมนูโปรด เช่น ข้าวมันไก่, ก๋วยเตี๋ยวต้มยำ, ชานม หรือชื่อร้าน..."
-          className="w-full pl-13 pr-12 py-3 bg-white rounded-xl border border-[#e9d5ff] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/20 focus:border-[#6d28d9] text-xs sm:text-sm font-medium transition-all placeholder:text-[#9ca3af]"
+          className="w-full pl-12 pr-12 py-2.5 sm:py-3 bg-white rounded-xs border border-[#786259] focus:outline-none focus:ring-1 focus:ring-[#451400] focus:border-[#451400] text-xs sm:text-sm font-sans font-medium transition-all placeholder:text-[#786259]"
         />
         {searchQuery && (
           <button
             onClick={() => onSearchChange('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded text-[#9ca3af] hover:text-[#6d28d9] hover:bg-[#faf5ff] transition-all"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-xs text-[#786259] hover:text-[#451400] hover:bg-[#f2f2f2] transition-all"
             title="ล้างคำค้น"
           >
             <X className="w-4 h-4" />
@@ -50,7 +50,7 @@ export default function CategoryPills({
         )}
       </div>
 
-      {/* Category Pills in School Purple & Yellow Style */}
+      {/* Category Pills in Chipotle Hard-Corner Tile Style */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none no-scrollbar py-0.5">
         {categories.map((cat) => {
           const isSelected = selectedCategory === cat.id;
@@ -58,10 +58,10 @@ export default function CategoryPills({
             <button
               key={cat.id}
               onClick={() => onSelectCategory(cat.id)}
-              className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-condensed font-bold uppercase tracking-wider transition-all duration-150 active:scale-95 ${
+              className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xs text-xs sm:text-sm font-display uppercase tracking-wider transition-all duration-150 active:scale-95 ${
                 isSelected
-                  ? 'bg-[#6d28d9] text-[#facc15] shadow-md border border-[#5b21b6] font-black'
-                  : 'bg-white text-[#1e1b4b] hover:text-[#6d28d9] hover:border-[#6d28d9] border border-[#e9d5ff]'
+                  ? 'bg-[#451400] text-white shadow-xs border border-[#000000] font-black'
+                  : 'bg-white text-[#451400] hover:bg-[#f2f2f2] border border-[#451400] font-bold'
               }`}
             >
               <span className="text-base">{cat.icon}</span>

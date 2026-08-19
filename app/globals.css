@@ -1,33 +1,33 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400&family=Oswald:wght@500;600;700&family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --primary-purple: #6d28d9;
-  --primary-purple-dark: #5b21b6;
-  --primary-yellow: #facc15;
-  --primary-yellow-hover: #eab308;
-  --ink-primary: #1e1b4b;
-  --ink-muted: #6b7280;
-  --ink-light: #9ca3af;
-  --canvas-bg: #ffffff;
-  --surface-bg: #faf5ff;
-  --hairline: #e9d5ff;
+  --chipotle-ink: #451400;
+  --chipotle-ink-soft: #6b321b;
+  --chipotle-ash: #786259;
+  --chipotle-gold: #b68207;
+  --chipotle-gold-deep: #976500;
+  --chipotle-red: #ad2118;
+  --chipotle-white: #ffffff;
+  --chipotle-cream: #f2f2f2;
+  --chipotle-hairline: #d4cbc7;
 }
 
 body {
-  font-family: 'Prompt', 'Inter', Arial, sans-serif;
-  background-color: #faf8fd;
-  color: #1e1b4b;
+  font-family: 'Nunito', 'Prompt', Arial, sans-serif;
+  background-color: #fcfaf7;
+  color: #451400;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Headings in Condensed Style */
-h1, h2, h3, .font-condensed {
-  font-family: 'Barlow Condensed', 'Prompt', Arial, sans-serif;
-  letter-spacing: 0.02em;
+/* Headings in Chipotle's Uppercase Block Lettering Stack */
+h1, h2, h3, .font-display, .font-condensed {
+  font-family: 'Oswald', 'Trade Gothic LT Bold', 'Prompt', sans-serif;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 /* Custom Scrollbar */
@@ -37,59 +37,84 @@ h1, h2, h3, .font-condensed {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f3e8ff;
+  background: #f7ede8;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c084fc;
-  border-radius: 9999px;
+  background: #cb9f8c;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #6d28d9;
+  background: #451400;
 }
 
-/* School Purple Top Header Bar */
-.school-header {
-  background-color: #6d28d9;
-  color: #ffffff;
-  border-bottom: 2px solid #5b21b6;
-  box-shadow: 0 4px 15px -2px rgba(109, 40, 217, 0.25);
-}
-
-/* School Yellow Action Button */
-.btn-school-yellow {
-  background-color: #facc15;
-  color: #1e1b4b;
-  font-family: 'Barlow Condensed', 'Prompt', sans-serif;
-  font-weight: 800;
-  text-transform: uppercase;
-  transition: all 0.2s ease;
-}
-.btn-school-yellow:hover {
-  background-color: #eab308;
-  box-shadow: 0 4px 12px rgba(250, 204, 21, 0.4);
-}
-
-/* School Purple Action Button */
-.btn-school-purple {
-  background-color: #6d28d9;
-  color: #ffffff;
-  font-family: 'Barlow Condensed', 'Prompt', sans-serif;
-  font-weight: 700;
-  text-transform: uppercase;
-  transition: all 0.2s ease;
-}
-.btn-school-purple:hover {
-  background-color: #5b21b6;
-  box-shadow: 0 4px 12px rgba(109, 40, 217, 0.35);
-}
-
-/* White Content Card */
-.school-card {
+/* Chipotle Top Header Bar */
+.chipotle-header {
   background-color: #ffffff;
-  border: 1px solid #e9d5ff;
-  box-shadow: 0 2px 8px -1px rgba(109, 40, 217, 0.05);
+  color: #451400;
+  border-bottom: 1px solid #451400;
+  box-shadow: 0 1px 3px rgba(69, 20, 0, 0.05);
+}
+
+/* Chipotle Primary Burnt-Umber CTA Button */
+.btn-chipotle-primary {
+  background-color: #451400;
+  color: #ffffff;
+  font-family: 'Nunito', 'Prompt', sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 4px;
+  border: 1px solid #000000;
+  transition: all 0.15s ease-in-out;
+}
+.btn-chipotle-primary:hover {
+  background-color: #6b321b;
+  border-color: #451400;
+}
+
+/* Chipotle Secondary Outline Button */
+.btn-chipotle-outline {
+  background-color: #ffffff;
+  color: #451400;
+  font-family: 'Nunito', 'Prompt', sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 4px;
+  border: 1px solid #451400;
+  transition: all 0.15s ease-in-out;
+}
+.btn-chipotle-outline:hover {
+  background-color: #f2f2f2;
+}
+
+/* Chipotle Honey-Gold Strip Button */
+.btn-chipotle-gold {
+  background-color: #b68207;
+  color: #ffffff;
+  font-family: 'Nunito', 'Prompt', sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 4px;
+  border: 1px solid #976500;
+  transition: all 0.15s ease-in-out;
+}
+.btn-chipotle-gold:hover {
+  background-color: #976500;
+}
+
+/* Chipotle Menu Category Tile (Food on White with 1px #451400 outline) */
+.chipotle-tile {
+  background-color: #ffffff;
+  border-radius: 4px;
+  border: 1px solid #451400;
+  box-shadow: 0px 0px 40px rgba(0, 0, 0, 0.06);
 }
 
 /* Ticket Notches styling */
@@ -104,7 +129,7 @@ h1, h2, h3, .font-condensed {
   transform: translateY(-50%);
   width: 24px;
   height: 24px;
-  background-color: #faf8fd;
+  background-color: #fcfaf7;
   border-radius: 50%;
   z-index: 10;
 }
@@ -120,7 +145,7 @@ h1, h2, h3, .font-condensed {
   transform: translateY(-50%);
   width: 24px;
   height: 24px;
-  background-color: #faf8fd;
+  background-color: #fcfaf7;
   border-radius: 50%;
   z-index: 10;
 }
