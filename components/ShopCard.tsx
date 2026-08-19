@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import { Shop, Product } from '@/types';
-import { Clock, Star, MapPin, ChevronRight, Sparkles } from 'lucide-react';
+import { Clock, Star, MapPin, ChevronRight } from 'lucide-react';
 
 interface ShopCardProps {
   shop: Shop;
@@ -21,7 +21,7 @@ export default function ShopCard({ shop, products }: ShopCardProps) {
   return (
     <Link
       href={`/shop/${shop.id}`}
-      className="group bg-white rounded-3xl overflow-hidden border border-slate-200/70 shadow-sm hover:shadow-card hover:-translate-y-1 transition-all duration-300 flex flex-col"
+      className="group bg-white rounded-xl overflow-hidden border border-[#d9d9d9] shadow-sm hover:shadow-md hover:border-[#10789f] hover:-translate-y-0.5 transition-all duration-200 flex flex-col"
     >
       {/* Shop Banner & Image */}
       <div className="relative h-44 w-full overflow-hidden bg-slate-100">
@@ -29,74 +29,74 @@ export default function ShopCard({ shop, products }: ShopCardProps) {
         <img
           src={shop.imageUrl}
           alt={shop.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
 
         {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#000000]/70 via-transparent to-black/20" />
 
         {/* Stall Badge (Top Left) */}
-        <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-bold text-slate-800 shadow-md flex items-center gap-1.5 border border-slate-100">
-          <MapPin className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+        <div className="absolute top-2.5 left-2.5 bg-white px-2.5 py-1 rounded text-xs font-bold text-[#333333] shadow flex items-center gap-1.5 border border-[#d9d9d9]">
+          <MapPin className="w-3.5 h-3.5 text-[#10789f] shrink-0" />
           <span className="truncate max-w-[170px]">{shop.stallName}</span>
         </div>
 
         {/* Open/Close Status (Top Right) */}
-        <div className="absolute top-3 right-3">
+        <div className="absolute top-2.5 right-2.5">
           {shop.isOpen ? (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/90 text-white backdrop-blur-md shadow-md">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold bg-[#10789f] text-white shadow">
               <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
               เปิดรับออเดอร์
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-slate-800/90 text-slate-200 backdrop-blur-md">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold bg-[#333333] text-white">
               ปิดรับชั่วคราว
             </span>
           )}
         </div>
 
         {/* Cutoff Time Countdown (Bottom Left of Image) */}
-        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white text-xs">
-          <div className="flex items-center gap-1.5 font-semibold bg-black/50 backdrop-blur-md px-2.5 py-1 rounded-xl">
-            <Clock className="w-3.5 h-3.5 text-amber-400" />
+        <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-white text-xs">
+          <div className="flex items-center gap-1.5 font-semibold bg-black/60 px-2.5 py-1 rounded">
+            <Clock className="w-3.5 h-3.5 text-amber-300" />
             <span>ปิดรับ {shop.cutoffTime} น.</span>
           </div>
 
-          <div className="flex items-center gap-1 font-bold bg-amber-500 text-slate-950 px-2.5 py-1 rounded-xl shadow-sm">
-            <Star className="w-3.5 h-3.5 fill-current" />
+          <div className="flex items-center gap-1 font-bold bg-amber-400 text-[#333333] px-2 py-0.5 rounded shadow-sm">
+            <Star className="w-3 h-3 fill-current" />
             <span>{displayRating.toFixed(1)}</span>
-            {ratingData.count > 0 && <span className="text-[10px] text-slate-800">({ratingData.count})</span>}
+            {ratingData.count > 0 && <span className="text-[10px] text-[#333333]">({ratingData.count})</span>}
           </div>
         </div>
       </div>
 
       {/* Shop Info Details */}
-      <div className="p-5 flex-1 flex flex-col justify-between">
+      <div className="p-4 flex-1 flex flex-col justify-between">
         <div>
-          <h3 className="font-bold text-lg text-slate-900 group-hover:text-brand-600 transition-colors line-clamp-1">
+          <h3 className="font-condensed font-bold text-xl text-[#333333] group-hover:text-[#10789f] transition-colors line-clamp-1 uppercase">
             {shop.name}
           </h3>
-          <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+          <p className="text-xs text-[#858585] mt-1 line-clamp-2 leading-relaxed font-sans">
             {shop.description}
           </p>
         </div>
 
-        {/* Footer Meta */}
-        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+        {/* Footer Meta with Domino's Red CTA */}
+        <div className="mt-3.5 pt-3 border-t border-[#d9d9d9] flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-600">
-              {shopProducts.length} เมนูพร้อมสั่ง
+            <span className="text-xs font-semibold text-[#858585]">
+              {shopProducts.length} เมนู
             </span>
             {totalQuotaLeft > 0 && (
-              <span className="px-2 py-0.5 rounded-md bg-orange-50 text-brand-600 text-[11px] font-bold">
+              <span className="px-2 py-0.5 rounded bg-[#f0f9fb] text-[#10789f] text-[11px] font-bold border border-[#b4e0ed]">
                 เหลือ {totalQuotaLeft} ที่
               </span>
             )}
           </div>
 
-          <div className="text-brand-600 font-bold text-xs flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-            <span>สั่งเลย</span>
-            <ChevronRight className="w-4 h-4" />
+          <div className="bg-[#e3193b] group-hover:bg-[#cc1433] text-white font-condensed uppercase font-bold text-xs px-3 py-1 rounded flex items-center gap-1 shadow-sm transition-colors">
+            <span>สั่งซื้อ</span>
+            <ChevronRight className="w-3.5 h-3.5" />
           </div>
         </div>
       </div>
